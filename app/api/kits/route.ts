@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma-client';
+import { edgedb } from '@/lib/edgedb-client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,70 +10,89 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    const where: any = {};
-    
+    // Build EdgeQL query
+    let query = `
+      SELECT Kit {
+        id,
+        name,
+        grade,
+        series,
+        scale,
+        image_url,
+        description,
+        price_entries: {
+          price,
+          recorded_at
+        } ORDER BY .recorded_at DESC LIMIT 1,
+        store_links: {
+          id,
+          url,
+          is_active,
+          store: {
+            id,
+            name,
+            website
+          }
+        }
+      }
+    `;
+
+    const filters: string[] = [];
     if (search) {
-      where.name = {
-        contains: search,
-        mode: 'insensitive',
-      };
+      filters.push(`.name ILIKE '%${search}%'`);
     }
-    
     if (grade) {
-      where.grade = grade;
+      filters.push(`.grade = '${grade}'`);
     }
-    
     if (series) {
-      where.series = series;
+      filters.push(`.series = '${series}'`);
     }
 
-    const [kits, total] = await Promise.all([
-      prisma.kit.findMany({
-        where,
-        take: limit,
-        skip: offset,
-        orderBy: { name: 'asc' },
-        include: {
-          priceEntries: {
-            orderBy: { recordedAt: 'desc' },
-            take: 1,
-          },
-          storeLinks: {
-            include: {
-              store: true,
-            },
-          },
-        },
-      }),
-      prisma.kit.count({ where }),
-    ]);
+    if (filters.length > 0) {
+      query += ` FILTER ${filters.join(' AND ')}`;
+    }
 
-    // Calculate current price and average price for each kit
+    query += ` ORDER BY .name ASC LIMIT ${limit} OFFSET ${offset}`;
+
+    const kits = await edgedb.query(query);
+
+    // Get total count
+    let countQuery = `SELECT count(Kit)`;
+    if (filters.length > 0) {
+      countQuery += ` FILTER ${filters.join(' AND ')}`;
+    }
+    const total = await edgedb.querySingle(countQuery);
+
+    // Calculate prices for each kit
     const kitsWithPrices = await Promise.all(
-      kits.map(async (kit) => {
-        const prices = await prisma.priceEntry.findMany({
-          where: { kitId: kit.id },
-          orderBy: { recordedAt: 'desc' },
-        });
+      kits.map(async (kit: any) => {
+        const prices = await edgedb.query(`
+          SELECT PriceEntry {
+            price
+          }
+          FILTER .kit.id = <uuid>'${kit.id}'
+          ORDER BY .recorded_at DESC
+        `);
 
-        const currentPrice = prices[0]?.price || null;
+        const priceValues = prices.map((p: any) => p.price);
+        const currentPrice = priceValues[0] || null;
         const averagePrice =
-          prices.length > 0
-            ? prices.reduce((sum, p) => sum + p.price, 0) / prices.length
+          priceValues.length > 0
+            ? priceValues.reduce((sum: number, p: number) => sum + p, 0) / priceValues.length
             : null;
 
         return {
           ...kit,
           currentPrice,
           averagePrice,
-          priceCount: prices.length,
+          priceCount: priceValues.length,
         };
       })
     );
 
     return NextResponse.json({
       kits: kitsWithPrices,
-      total,
+      total: Number(total),
       limit,
       offset,
     });
@@ -98,42 +117,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const kit = await prisma.kit.create({
-      data: {
-        name,
-        grade,
-        series,
-        scale,
-        releaseDate: releaseDate ? new Date(releaseDate) : null,
-        imageUrl,
-        description,
-      },
+    // Create kit
+    const kit = await edgedb.querySingle(`
+      INSERT Kit {
+        name := <str>$name,
+        grade := <str>$grade,
+        series := <optional str>$series,
+        scale := <optional str>$scale,
+        release_date := <optional datetime>$releaseDate,
+        image_url := <optional str>$imageUrl,
+        description := <optional str>$description
+      }
+    `, {
+      name,
+      grade,
+      series: series || null,
+      scale: scale || null,
+      releaseDate: releaseDate ? new Date(releaseDate) : null,
+      imageUrl: imageUrl || null,
+      description: description || null,
     });
 
     // Create store links if provided
     if (storeLinks && Array.isArray(storeLinks)) {
       for (const link of storeLinks) {
         // Find or create store
-        let store = await prisma.store.findUnique({
-          where: { name: link.storeName },
-        });
+        let store = await edgedb.querySingle(`
+          SELECT Store FILTER .name = <str>$name
+        `, { name: link.storeName });
 
         if (!store) {
-          store = await prisma.store.create({
-            data: {
-              name: link.storeName,
-              website: link.storeWebsite || link.storeName,
-            },
+          store = await edgedb.querySingle(`
+            INSERT Store {
+              name := <str>$name,
+              website := <str>$website
+            }
+          `, {
+            name: link.storeName,
+            website: link.storeWebsite || link.storeName,
           });
         }
 
         // Create store link
-        await prisma.storeLink.create({
-          data: {
-            kitId: kit.id,
-            storeId: store.id,
-            url: link.url,
-          },
+        await edgedb.query(`
+          INSERT StoreLink {
+            kit := (SELECT Kit FILTER .id = <uuid>$kitId),
+            store := (SELECT Store FILTER .id = <uuid>$storeId),
+            url := <str>$url
+          }
+        `, {
+          kitId: kit.id,
+          storeId: store.id,
+          url: link.url,
         });
       }
     }
