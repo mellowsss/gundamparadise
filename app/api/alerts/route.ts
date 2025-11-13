@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       }
       FILTER .user.id = <uuid>$userId
       ORDER BY .created_at DESC
-    `, { userId: user.id });
+    `, { userId: GUEST_USER_ID });
 
     return NextResponse.json(transformObject(alerts));
   } catch (error) {
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         alert_type := <str>$alertType
       }
     `, {
-      userId: user.id,
+      userId: GUEST_USER_ID,
       kitId,
       targetPrice: targetPrice ? parseFloat(targetPrice) : null,
       alertType,

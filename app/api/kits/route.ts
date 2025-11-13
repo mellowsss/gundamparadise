@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
 
     // Create store links if provided
     if (storeLinks && Array.isArray(storeLinks)) {
+      const kitResult = kit as { id: string };
       for (const link of storeLinks) {
         // Find or create store
         let store = await edgedb.querySingle(`
@@ -159,6 +160,8 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        const storeResult = store as { id: string };
+
         // Create store link
         await edgedb.query(`
           INSERT StoreLink {
@@ -167,8 +170,8 @@ export async function POST(request: NextRequest) {
             url := <str>$url
           }
         `, {
-          kitId: kit.id,
-          storeId: store.id,
+          kitId: kitResult.id,
+          storeId: storeResult.id,
           url: link.url,
         });
       }

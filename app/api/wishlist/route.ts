@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       }
       FILTER .user.id = <uuid>$userId
       ORDER BY .added_at DESC
-    `, { userId: user.id });
+    `, { userId: GUEST_USER_ID });
 
     // Calculate current prices
     const itemsWithPrices = await Promise.all(
@@ -116,10 +116,11 @@ export async function POST(request: NextRequest) {
     const existing = await edgedb.querySingle(`
       SELECT WishlistItem
       FILTER .user.id = <uuid>$userId AND .kit.id = <uuid>$kitId
-    `, { userId: user.id, kitId });
+    `, { userId: GUEST_USER_ID, kitId });
 
     let wishlistItem;
     if (existing) {
+      const existingItem = existing as { id: string };
       wishlistItem = await edgedb.querySingle(`
         UPDATE WishlistItem
         FILTER .id = <uuid>$itemId
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
           notes := <optional str>$notes
         }
       `, {
-        itemId: existing.id,
+        itemId: existingItem.id,
         targetPrice: targetPrice ? parseFloat(targetPrice) : null,
         notes: notes || null,
       });
@@ -141,7 +142,7 @@ export async function POST(request: NextRequest) {
           notes := <optional str>$notes
         }
       `, {
-        userId: user.id,
+        userId: GUEST_USER_ID,
         kitId,
         targetPrice: targetPrice ? parseFloat(targetPrice) : null,
         notes: notes || null,
