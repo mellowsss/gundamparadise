@@ -1,10 +1,5 @@
-// EdgeDB Schema for Gundam Paradise
-
 module default {
   type User {
-    required id: uuid {
-      default := uuid_generate_v4();
-    }
     email: str;
     name: str;
     created_at: datetime {
@@ -19,9 +14,6 @@ module default {
   }
 
   type Store {
-    required id: uuid {
-      default := uuid_generate_v4();
-    }
     required name: str {
       constraint exclusive;
     }
@@ -34,13 +26,10 @@ module default {
   }
 
   type Kit {
-    required id: uuid {
-      default := uuid_generate_v4();
-    }
     required name: str;
-    required grade: str;  // HG, RG, MG, PG, SD, etc.
-    series: str;  // UC, SEED, 00, Wing, etc.
-    scale: str;  // 1/144, 1/100, 1/60, etc.
+    required grade: str;
+    series: str;
+    scale: str;
     release_date: datetime;
     image_url: str;
     description: str;
@@ -58,9 +47,6 @@ module default {
   }
 
   type StoreLink {
-    required id: uuid {
-      default := uuid_generate_v4();
-    }
     required kit: Kit;
     required store: Store;
     required url: str;
@@ -76,9 +62,6 @@ module default {
   }
 
   type PriceEntry {
-    required id: uuid {
-      default := uuid_generate_v4();
-    }
     required kit: Kit;
     store: Store;
     required price: float64;
@@ -94,9 +77,6 @@ module default {
   }
 
   type WishlistItem {
-    required id: uuid {
-      default := uuid_generate_v4();
-    }
     required user: User;
     required kit: Kit;
     target_price: float64;
@@ -107,9 +87,6 @@ module default {
   }
 
   type CollectionItem {
-    required id: uuid {
-      default := uuid_generate_v4();
-    }
     required user: User;
     required kit: Kit;
     purchase_price: float64;
@@ -121,13 +98,10 @@ module default {
   }
 
   type PriceAlert {
-    required id: uuid {
-      default := uuid_generate_v4();
-    }
     required user: User;
     required kit: Kit;
     target_price: float64;
-    alert_type: str;  // "price_drop", "back_in_stock", "sale"
+    alert_type: str;
     is_active: bool {
       default := true;
     }
