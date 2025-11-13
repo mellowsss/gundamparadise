@@ -4,6 +4,16 @@ import { transformObject } from '@/lib/transform';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if EdgeDB is configured
+    if (!process.env.EDGEDB_INSTANCE || !process.env.EDGEDB_SECRET_KEY) {
+      return NextResponse.json({
+        kits: [],
+        total: 0,
+        limit: 20,
+        offset: 0,
+      });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
     const grade = searchParams.get('grade') || '';

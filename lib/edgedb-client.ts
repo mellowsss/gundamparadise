@@ -6,18 +6,24 @@ const globalForEdgeDB = globalThis as unknown as {
   edgedb: ReturnType<typeof createClient> | undefined;
 };
 
-// Create client with error handling
+// Create client with error handling - won't crash if env vars are missing
 let edgedbClient: ReturnType<typeof createClient>;
 
 try {
-  edgedbClient = globalForEdgeDB.edgedb ?? createClient();
-  
-  if (process.env.NODE_ENV !== 'production') {
-    globalForEdgeDB.edgedb = edgedbClient;
+  // Only create client if environment variables are present
+  if (process.env.EDGEDB_INSTANCE && process.env.EDGEDB_SECRET_KEY) {
+    edgedbClient = globalForEdgeDB.edgedb ?? createClient();
+    
+    if (process.env.NODE_ENV !== 'production') {
+      globalForEdgeDB.edgedb = edgedbClient;
+    }
+  } else {
+    // Create a client anyway - EdgeDB will handle missing credentials gracefully
+    edgedbClient = createClient();
   }
 } catch (error) {
-  console.error('Failed to create EdgeDB client:', error);
-  // Create a mock client that will fail gracefully
+  console.warn('EdgeDB client initialization warning:', error);
+  // Create client anyway - errors will be handled at query time
   edgedbClient = createClient();
 }
 
