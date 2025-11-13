@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "vercel-build": "next build"
+    "vercel-build": "next build",
+    "test:connection": "node test-connection.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
