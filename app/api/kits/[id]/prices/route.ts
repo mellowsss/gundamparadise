@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getKitById } from '@/lib/storage';
+import { prisma } from '@/lib/prisma-client';
 
 export async function GET(
   request: NextRequest,
@@ -8,32 +8,22 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const { id } = resolvedParams;
-    const kit = getKitById(id);
-
-    if (!kit) {
-      return NextResponse.json({ error: 'Kit not found' }, { status: 404 });
-    }
-
-    // Generate mock price history
     const days = parseInt(request.nextUrl.searchParams.get('days') || '30');
-    const priceEntries = [];
-    const now = new Date();
-    
-    for (let i = 0; i < days; i++) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      const price = kit.currentPrice + (Math.random() * 5 - 2.5);
-      
-      priceEntries.push({
-        id: `price-${i}`,
-        kitId: id,
-        price: Math.round(price * 100) / 100,
-        recordedAt: date.toISOString(),
-        inStock: Math.random() > 0.3,
-      });
-    }
 
-    return NextResponse.json(priceEntries.reverse());
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const priceEntries = await prisma.priceEntry.findMany({
+      where: {
+        kitId: id,
+        recordedAt: {
+          gte: startDate,
+        },
+      },
+      orderBy: { recordedAt: 'asc' },
+    });
+
+    return NextResponse.json(priceEntries);
   } catch (error) {
     console.error('Error fetching price history:', error);
     return NextResponse.json(
@@ -47,9 +37,35 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Price entry creation not supported without database
-  return NextResponse.json(
-    { error: 'Price entry creation not available without database' },
-    { status: 501 }
-  );
+  try {
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+    const body = await request.json();
+    const { price, storeId, currency = 'USD', inStock = true } = body;
+
+    if (!price) {
+      return NextResponse.json(
+        { error: 'Price is required' },
+        { status: 400 }
+      );
+    }
+
+    const priceEntry = await prisma.priceEntry.create({
+      data: {
+        kitId: id,
+        storeId: storeId || null,
+        price: parseFloat(price),
+        currency,
+        inStock,
+      },
+    });
+
+    return NextResponse.json(priceEntry, { status: 201 });
+  } catch (error) {
+    console.error('Error creating price entry:', error);
+    return NextResponse.json(
+      { error: 'Failed to create price entry' },
+      { status: 500 }
+    );
+  }
 }

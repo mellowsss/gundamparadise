@@ -1,21 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCollection, saveCollection, getKitById } from '@/lib/storage';
+import { prisma } from '@/lib/prisma-client';
+
+const GUEST_USER_ID = 'guest-user-id';
 
 export async function GET(request: NextRequest) {
   try {
-    const collectionItems = getCollection();
-    
-    // Enrich with kit data
-    const itemsWithKits = collectionItems.map(item => ({
-      ...item,
-      kit: getKitById(item.kitId) || {
-        id: item.kitId,
-        name: 'Unknown Kit',
-        grade: 'N/A',
-      },
-    }));
+    let user = await prisma.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
-    return NextResponse.json(itemsWithKits);
+    if (!user) {
+      user = await prisma.user.create({
+        data: { id: GUEST_USER_ID },
+      });
+    }
+
+    const collectionItems = await prisma.collectionItem.findMany({
+      where: { userId: user.id },
+      include: {
+        kit: {
+          include: {
+            storeLinks: {
+              include: {
+                store: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { addedAt: 'desc' },
+    });
+
+    return NextResponse.json(collectionItems);
   } catch (error) {
     console.error('Error fetching collection:', error);
     return NextResponse.json(
@@ -37,25 +53,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const collection = getCollection();
-    const existingIndex = collection.findIndex(item => item.kitId === kitId);
+    let user = await prisma.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
-    const collectionItem = {
-      id: existingIndex >= 0 ? collection[existingIndex].id : `coll-${Date.now()}`,
-      kitId,
-      purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
-      purchaseDate: purchaseDate || null,
-      notes,
-      addedAt: existingIndex >= 0 ? collection[existingIndex].addedAt : new Date().toISOString(),
-    };
-
-    if (existingIndex >= 0) {
-      collection[existingIndex] = collectionItem;
-    } else {
-      collection.push(collectionItem);
+    if (!user) {
+      user = await prisma.user.create({
+        data: { id: GUEST_USER_ID },
+      });
     }
 
-    saveCollection(collection);
+    const collectionItem = await prisma.collectionItem.upsert({
+      where: {
+        userId_kitId: {
+          userId: user.id,
+          kitId,
+        },
+      },
+      update: {
+        purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
+        purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
+        notes,
+      },
+      create: {
+        userId: user.id,
+        kitId,
+        purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
+        purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
+        notes,
+      },
+    });
 
     return NextResponse.json(collectionItem, { status: 201 });
   } catch (error) {

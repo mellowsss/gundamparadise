@@ -1,21 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getWishlist, saveWishlist, getKitById } from '@/lib/storage';
+import { prisma } from '@/lib/prisma-client';
+
+const GUEST_USER_ID = 'guest-user-id';
 
 export async function GET(request: NextRequest) {
   try {
-    const wishlistItems = getWishlist();
-    
-    // Enrich with kit data
-    const itemsWithKits = wishlistItems.map(item => ({
-      ...item,
-      kit: getKitById(item.kitId) || {
-        id: item.kitId,
-        name: 'Unknown Kit',
-        grade: 'N/A',
-      },
-    }));
+    let user = await prisma.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
-    return NextResponse.json(itemsWithKits);
+    if (!user) {
+      user = await prisma.user.create({
+        data: { id: GUEST_USER_ID },
+      });
+    }
+
+    const wishlistItems = await prisma.wishlistItem.findMany({
+      where: { userId: user.id },
+      include: {
+        kit: {
+          include: {
+            priceEntries: {
+              orderBy: { recordedAt: 'desc' },
+              take: 1,
+            },
+            storeLinks: {
+              include: {
+                store: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { addedAt: 'desc' },
+    });
+
+    // Calculate current prices
+    const itemsWithPrices = await Promise.all(
+      wishlistItems.map(async (item) => {
+        const prices = await prisma.priceEntry.findMany({
+          where: { kitId: item.kitId },
+          orderBy: { recordedAt: 'desc' },
+        });
+
+        const currentPrice = prices[0]?.price || null;
+        const averagePrice =
+          prices.length > 0
+            ? prices.reduce((sum, p) => sum + p.price, 0) / prices.length
+            : null;
+
+        return {
+          ...item,
+          kit: {
+            ...item.kit,
+            currentPrice,
+            averagePrice,
+          },
+        };
+      })
+    );
+
+    return NextResponse.json(itemsWithPrices);
   } catch (error) {
     console.error('Error fetching wishlist:', error);
     return NextResponse.json(
@@ -37,24 +82,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const wishlist = getWishlist();
-    const existingIndex = wishlist.findIndex(item => item.kitId === kitId);
+    let user = await prisma.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
-    const wishlistItem = {
-      id: existingIndex >= 0 ? wishlist[existingIndex].id : `wish-${Date.now()}`,
-      kitId,
-      targetPrice: targetPrice ? parseFloat(targetPrice) : null,
-      notes,
-      addedAt: existingIndex >= 0 ? wishlist[existingIndex].addedAt : new Date().toISOString(),
-    };
-
-    if (existingIndex >= 0) {
-      wishlist[existingIndex] = wishlistItem;
-    } else {
-      wishlist.push(wishlistItem);
+    if (!user) {
+      user = await prisma.user.create({
+        data: { id: GUEST_USER_ID },
+      });
     }
 
-    saveWishlist(wishlist);
+    const wishlistItem = await prisma.wishlistItem.upsert({
+      where: {
+        userId_kitId: {
+          userId: user.id,
+          kitId,
+        },
+      },
+      update: {
+        targetPrice: targetPrice ? parseFloat(targetPrice) : null,
+        notes,
+      },
+      create: {
+        userId: user.id,
+        kitId,
+        targetPrice: targetPrice ? parseFloat(targetPrice) : null,
+        notes,
+      },
+    });
 
     return NextResponse.json(wishlistItem, { status: 201 });
   } catch (error) {

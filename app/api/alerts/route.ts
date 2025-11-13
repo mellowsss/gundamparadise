@@ -1,21 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAlerts, saveAlerts, getKitById } from '@/lib/storage';
+import { prisma } from '@/lib/prisma-client';
+
+const GUEST_USER_ID = 'guest-user-id';
 
 export async function GET(request: NextRequest) {
   try {
-    const alerts = getAlerts();
-    
-    // Enrich with kit data
-    const alertsWithKits = alerts.map(alert => ({
-      ...alert,
-      kit: getKitById(alert.kitId) || {
-        id: alert.kitId,
-        name: 'Unknown Kit',
-        grade: 'N/A',
-      },
-    }));
+    let user = await prisma.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
-    return NextResponse.json(alertsWithKits);
+    if (!user) {
+      user = await prisma.user.create({
+        data: { id: GUEST_USER_ID },
+      });
+    }
+
+    const alerts = await prisma.priceAlert.findMany({
+      where: { userId: user.id },
+      include: {
+        kit: {
+          include: {
+            priceEntries: {
+              orderBy: { recordedAt: 'desc' },
+              take: 1,
+            },
+            storeLinks: {
+              include: {
+                store: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json(alerts);
   } catch (error) {
     console.error('Error fetching alerts:', error);
     return NextResponse.json(
@@ -37,19 +57,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const alerts = getAlerts();
-    const alert = {
-      id: `alert-${Date.now()}`,
-      kitId,
-      targetPrice: targetPrice ? parseFloat(targetPrice) : null,
-      alertType,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      triggeredAt: null,
-    };
+    let user = await prisma.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
-    alerts.push(alert);
-    saveAlerts(alerts);
+    if (!user) {
+      user = await prisma.user.create({
+        data: { id: GUEST_USER_ID },
+      });
+    }
+
+    const alert = await prisma.priceAlert.create({
+      data: {
+        userId: user.id,
+        kitId,
+        targetPrice: targetPrice ? parseFloat(targetPrice) : null,
+        alertType,
+      },
+    });
 
     return NextResponse.json(alert, { status: 201 });
   } catch (error) {
