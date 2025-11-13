@@ -6,7 +6,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Kit ID is required' }, { status: 400 });
+    }
+
     const kit = getKitById(id);
 
     if (!kit) {

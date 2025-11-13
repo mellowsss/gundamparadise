@@ -6,7 +6,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
     const alerts = getAlerts();
     const filtered = alerts.filter(alert => alert.id !== id);
     saveAlerts(filtered);
@@ -26,7 +27,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
     const body = await request.json();
     const { isActive } = body;
 

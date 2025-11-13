@@ -6,7 +6,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
     const collection = getCollection();
     const filtered = collection.filter(item => item.kitId !== id);
     saveCollection(filtered);
