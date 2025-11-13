@@ -7,12 +7,12 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate || true",
+    "postinstall": "prisma generate || echo 'Prisma generate skipped'",
     "db:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "vercel-build": "rm -rf node_modules/.prisma node_modules/@prisma/client .prisma && prisma generate && next build"
+    "vercel-build": "prisma generate && next build"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

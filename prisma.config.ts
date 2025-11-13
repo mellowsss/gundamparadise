@@ -18,9 +18,4 @@ export default defineConfig({
     // Prisma generation doesn't actually connect to the database
     url: process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/dummy",
   },
-  generate: {
-    client: {
-      output: "../node_modules/.prisma/client",
-    },
-  },
 });
