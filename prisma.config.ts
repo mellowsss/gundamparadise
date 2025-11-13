@@ -1,12 +1,10 @@
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
-// Only load dotenv if DATABASE_URL is not set (for local development)
-if (!process.env.DATABASE_URL) {
-  try {
-    require("dotenv/config");
-  } catch (e) {
-    // dotenv not available, that's okay
-  }
+// Load dotenv for local development (optional)
+try {
+  require("dotenv/config");
+} catch (e) {
+  // dotenv not available, that's okay
 }
 
 export default defineConfig({
@@ -17,6 +15,7 @@ export default defineConfig({
   engine: "classic",
   datasource: {
     // Use a dummy URL for generation if DATABASE_URL is not set
+    // Prisma generation doesn't actually connect to the database
     url: process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/dummy",
   },
   generate: {
