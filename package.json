@@ -4,27 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate || echo 'Prisma generate skipped'",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "vercel-build": "prisma generate && next build"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "vercel-build": "next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@prisma/client": "^6.19.0",
     "date-fns": "^4.1.0",
-    "dotenv": "^17.2.3",
     "lucide-react": "^0.553.0",
     "next": "16.0.3",
-    "prisma": "^6.19.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.66.0",

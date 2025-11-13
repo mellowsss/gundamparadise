@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma-client';
-
-const GUEST_USER_ID = 'guest-user-id';
+import { getAlerts, saveAlerts } from '@/lib/storage';
 
 export async function DELETE(
   request: NextRequest,
@@ -9,18 +7,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    const user = await prisma.user.findUnique({
-      where: { id: GUEST_USER_ID },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    await prisma.priceAlert.delete({
-      where: { id },
-    });
+    const alerts = getAlerts();
+    const filtered = alerts.filter(alert => alert.id !== id);
+    saveAlerts(filtered);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -41,10 +30,15 @@ export async function PATCH(
     const body = await request.json();
     const { isActive } = body;
 
-    const alert = await prisma.priceAlert.update({
-      where: { id },
-      data: { isActive },
-    });
+    const alerts = getAlerts();
+    const alert = alerts.find(a => a.id === id);
+    
+    if (!alert) {
+      return NextResponse.json({ error: 'Alert not found' }, { status: 404 });
+    }
+
+    alert.isActive = isActive;
+    saveAlerts(alerts);
 
     return NextResponse.json(alert);
   } catch (error) {

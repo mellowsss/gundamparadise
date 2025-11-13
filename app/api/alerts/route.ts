@@ -1,36 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma-client';
-
-const GUEST_USER_ID = 'guest-user-id';
+import { getAlerts, saveAlerts, getKitById } from '@/lib/storage';
 
 export async function GET(request: NextRequest) {
   try {
-    let user = await prisma.user.findUnique({
-      where: { id: GUEST_USER_ID },
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: { id: GUEST_USER_ID },
-      });
-    }
-
-    const alerts = await prisma.priceAlert.findMany({
-      where: { userId: user.id },
-      include: {
-        kit: {
-          include: {
-            priceEntries: {
-              orderBy: { recordedAt: 'desc' },
-              take: 1,
-            },
-          },
-        },
+    const alerts = getAlerts();
+    
+    // Enrich with kit data
+    const alertsWithKits = alerts.map(alert => ({
+      ...alert,
+      kit: getKitById(alert.kitId) || {
+        id: alert.kitId,
+        name: 'Unknown Kit',
+        grade: 'N/A',
       },
-      orderBy: { createdAt: 'desc' },
-    });
+    }));
 
-    return NextResponse.json(alerts);
+    return NextResponse.json(alertsWithKits);
   } catch (error) {
     console.error('Error fetching alerts:', error);
     return NextResponse.json(
@@ -52,24 +37,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let user = await prisma.user.findUnique({
-      where: { id: GUEST_USER_ID },
-    });
+    const alerts = getAlerts();
+    const alert = {
+      id: `alert-${Date.now()}`,
+      kitId,
+      targetPrice: targetPrice ? parseFloat(targetPrice) : null,
+      alertType,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      triggeredAt: null,
+    };
 
-    if (!user) {
-      user = await prisma.user.create({
-        data: { id: GUEST_USER_ID },
-      });
-    }
-
-    const alert = await prisma.priceAlert.create({
-      data: {
-        userId: user.id,
-        kitId,
-        targetPrice: targetPrice ? parseFloat(targetPrice) : null,
-        alertType,
-      },
-    });
+    alerts.push(alert);
+    saveAlerts(alerts);
 
     return NextResponse.json(alert, { status: 201 });
   } catch (error) {

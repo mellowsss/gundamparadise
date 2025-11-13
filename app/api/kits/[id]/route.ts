@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma-client';
+import { getKitById } from '@/lib/storage';
 
 export async function GET(
   request: NextRequest,
@@ -7,47 +7,13 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
-    const kit = await prisma.kit.findUnique({
-      where: { id },
-      include: {
-        priceEntries: {
-          orderBy: { recordedAt: 'desc' },
-          include: {
-            kit: {
-              select: { name: true },
-            },
-          },
-        },
-        storeLinks: {
-          include: {
-            store: true,
-          },
-        },
-      },
-    });
+    const kit = getKitById(id);
 
     if (!kit) {
       return NextResponse.json({ error: 'Kit not found' }, { status: 404 });
     }
 
-    // Calculate price statistics
-    const prices = kit.priceEntries.map((pe) => pe.price);
-    const currentPrice = prices[0] || null;
-    const averagePrice =
-      prices.length > 0
-        ? prices.reduce((sum, p) => sum + p, 0) / prices.length
-        : null;
-    const minPrice = prices.length > 0 ? Math.min(...prices) : null;
-    const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
-
-    return NextResponse.json({
-      ...kit,
-      currentPrice,
-      averagePrice,
-      minPrice,
-      maxPrice,
-    });
+    return NextResponse.json(kit);
   } catch (error) {
     console.error('Error fetching kit:', error);
     return NextResponse.json(

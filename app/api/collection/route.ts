@@ -1,29 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma-client';
-
-const GUEST_USER_ID = 'guest-user-id';
+import { getCollection, saveCollection, getKitById } from '@/lib/storage';
 
 export async function GET(request: NextRequest) {
   try {
-    let user = await prisma.user.findUnique({
-      where: { id: GUEST_USER_ID },
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: { id: GUEST_USER_ID },
-      });
-    }
-
-    const collectionItems = await prisma.collectionItem.findMany({
-      where: { userId: user.id },
-      include: {
-        kit: true,
+    const collectionItems = getCollection();
+    
+    // Enrich with kit data
+    const itemsWithKits = collectionItems.map(item => ({
+      ...item,
+      kit: getKitById(item.kitId) || {
+        id: item.kitId,
+        name: 'Unknown Kit',
+        grade: 'N/A',
       },
-      orderBy: { addedAt: 'desc' },
-    });
+    }));
 
-    return NextResponse.json(collectionItems);
+    return NextResponse.json(itemsWithKits);
   } catch (error) {
     console.error('Error fetching collection:', error);
     return NextResponse.json(
@@ -45,36 +37,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let user = await prisma.user.findUnique({
-      where: { id: GUEST_USER_ID },
-    });
+    const collection = getCollection();
+    const existingIndex = collection.findIndex(item => item.kitId === kitId);
 
-    if (!user) {
-      user = await prisma.user.create({
-        data: { id: GUEST_USER_ID },
-      });
+    const collectionItem = {
+      id: existingIndex >= 0 ? collection[existingIndex].id : `coll-${Date.now()}`,
+      kitId,
+      purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
+      purchaseDate: purchaseDate || null,
+      notes,
+      addedAt: existingIndex >= 0 ? collection[existingIndex].addedAt : new Date().toISOString(),
+    };
+
+    if (existingIndex >= 0) {
+      collection[existingIndex] = collectionItem;
+    } else {
+      collection.push(collectionItem);
     }
 
-    const collectionItem = await prisma.collectionItem.upsert({
-      where: {
-        userId_kitId: {
-          userId: user.id,
-          kitId,
-        },
-      },
-      update: {
-        purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
-        purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
-        notes,
-      },
-      create: {
-        userId: user.id,
-        kitId,
-        purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
-        purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
-        notes,
-      },
-    });
+    saveCollection(collection);
 
     return NextResponse.json(collectionItem, { status: 201 });
   } catch (error) {

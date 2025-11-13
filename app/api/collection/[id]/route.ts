@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma-client';
-
-const GUEST_USER_ID = 'guest-user-id';
+import { getCollection, saveCollection } from '@/lib/storage';
 
 export async function DELETE(
   request: NextRequest,
@@ -9,21 +7,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    const user = await prisma.user.findUnique({
-      where: { id: GUEST_USER_ID },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    await prisma.collectionItem.deleteMany({
-      where: {
-        userId: user.id,
-        kitId: id,
-      },
-    });
+    const collection = getCollection();
+    const filtered = collection.filter(item => item.kitId !== id);
+    saveCollection(filtered);
 
     return NextResponse.json({ success: true });
   } catch (error) {
