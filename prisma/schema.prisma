@@ -11,6 +11,9 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Support for Vercel Storage with custom prefix
+// If using STORAGE prefix, set DATABASE_URL=STORAGE_URL and DIRECT_URL=STORAGE_DIRECT_URL
+
 model User {
   id            String          @id @default(cuid())
   email         String?         @unique
