@@ -1,0 +1,70 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma-client';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const searchParams = request.nextUrl.searchParams;
+    const days = parseInt(searchParams.get('days') || '30');
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const priceEntries = await prisma.priceEntry.findMany({
+      where: {
+        kitId: id,
+        recordedAt: {
+          gte: startDate,
+        },
+      },
+      orderBy: { recordedAt: 'asc' },
+    });
+
+    return NextResponse.json(priceEntries);
+  } catch (error) {
+    console.error('Error fetching price history:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch price history' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const { price, storeId, currency = 'USD', inStock = true } = body;
+
+    if (!price) {
+      return NextResponse.json(
+        { error: 'Price is required' },
+        { status: 400 }
+      );
+    }
+
+    const priceEntry = await prisma.priceEntry.create({
+      data: {
+        kitId: id,
+        storeId: storeId || null,
+        price: parseFloat(price),
+        currency,
+        inStock,
+      },
+    });
+
+    return NextResponse.json(priceEntry, { status: 201 });
+  } catch (error) {
+    console.error('Error creating price entry:', error);
+    return NextResponse.json(
+      { error: 'Failed to create price entry' },
+      { status: 500 }
+    );
+  }
+}
