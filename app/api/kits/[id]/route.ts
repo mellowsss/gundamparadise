@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { edgedb } from '@/lib/edgedb-client';
+import { transformObject } from '@/lib/transform';
 
 export async function GET(
   request: NextRequest,
@@ -62,13 +63,13 @@ export async function GET(
     const minPrice = priceValues.length > 0 ? Math.min(...priceValues) : null;
     const maxPrice = priceValues.length > 0 ? Math.max(...priceValues) : null;
 
-    return NextResponse.json({
+    return NextResponse.json(transformObject({
       ...kit,
       currentPrice,
       averagePrice,
       minPrice,
       maxPrice,
-    });
+    }));
   } catch (error) {
     console.error('Error fetching kit:', error);
     return NextResponse.json(

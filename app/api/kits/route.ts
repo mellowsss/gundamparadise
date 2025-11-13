@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { edgedb } from '@/lib/edgedb-client';
+import { transformObject } from '@/lib/transform';
 
 export async function GET(request: NextRequest) {
   try {
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json({
-      kits: kitsWithPrices,
+      kits: transformObject(kitsWithPrices),
       total: Number(total),
       limit,
       offset,

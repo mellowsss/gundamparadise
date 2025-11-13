@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { edgedb } from '@/lib/edgedb-client';
+import { transformObject } from '@/lib/transform';
 
 export async function GET(
   request: NextRequest,
@@ -29,7 +30,7 @@ export async function GET(
       startDate: startDate.toISOString(),
     });
 
-    return NextResponse.json(priceEntries);
+    return NextResponse.json(transformObject(priceEntries));
   } catch (error) {
     console.error('Error fetching price history:', error);
     return NextResponse.json(

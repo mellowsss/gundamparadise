@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { edgedb } from '@/lib/edgedb-client';
+import { transformObject } from '@/lib/transform';
 
 const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       ORDER BY .added_at DESC
     `, { userId: user.id });
 
-    return NextResponse.json(collectionItems);
+    return NextResponse.json(transformObject(collectionItems));
   } catch (error) {
     console.error('Error fetching collection:', error);
     return NextResponse.json(
