@@ -72,6 +72,7 @@ export default function KitDetailPage() {
   };
 
   const addToWishlist = async () => {
+    if (!kit) return;
     try {
       const response = await fetch('/api/wishlist', {
         method: 'POST',
@@ -90,6 +91,7 @@ export default function KitDetailPage() {
   };
 
   const addToCollection = async () => {
+    if (!kit) return;
     try {
       const response = await fetch('/api/collection', {
         method: 'POST',
