@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCollection, saveCollection } from '@/lib/storage';
+import { edgedb } from '@/lib/edgedb-client';
+
+const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export async function DELETE(
   request: NextRequest,
@@ -8,9 +10,14 @@ export async function DELETE(
   try {
     const resolvedParams = await params;
     const { id } = resolvedParams;
-    const collection = getCollection();
-    const filtered = collection.filter(item => item.kitId !== id);
-    saveCollection(filtered);
+
+    await edgedb.query(`
+      DELETE CollectionItem
+      FILTER .user.id = <uuid>$userId AND .kit.id = <uuid>$kitId
+    `, {
+      userId: GUEST_USER_ID,
+      kitId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

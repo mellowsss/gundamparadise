@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAlerts, saveAlerts } from '@/lib/storage';
+import { edgedb } from '@/lib/edgedb-client';
+
+const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export async function DELETE(
   request: NextRequest,
@@ -8,9 +10,13 @@ export async function DELETE(
   try {
     const resolvedParams = await params;
     const { id } = resolvedParams;
-    const alerts = getAlerts();
-    const filtered = alerts.filter(alert => alert.id !== id);
-    saveAlerts(filtered);
+
+    await edgedb.query(`
+      DELETE PriceAlert
+      FILTER .id = <uuid>$alertId
+    `, {
+      alertId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -32,15 +38,20 @@ export async function PATCH(
     const body = await request.json();
     const { isActive } = body;
 
-    const alerts = getAlerts();
-    const alert = alerts.find(a => a.id === id);
-    
+    const alert = await edgedb.querySingle(`
+      UPDATE PriceAlert
+      FILTER .id = <uuid>$alertId
+      SET {
+        is_active := <bool>$isActive
+      }
+    `, {
+      alertId: id,
+      isActive: isActive !== undefined ? isActive : true,
+    });
+
     if (!alert) {
       return NextResponse.json({ error: 'Alert not found' }, { status: 404 });
     }
-
-    alert.isActive = isActive;
-    saveAlerts(alerts);
 
     return NextResponse.json(alert);
   } catch (error) {

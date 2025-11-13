@@ -1,52 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma-client';
+import { edgedb } from '@/lib/edgedb-client';
 
-const GUEST_USER_ID = 'guest-user-id';
+const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export async function GET(request: NextRequest) {
   try {
-    let user = await prisma.user.findUnique({
-      where: { id: GUEST_USER_ID },
-    });
+    // Get or create guest user
+    let user = await edgedb.querySingle(`
+      SELECT User FILTER .id = <uuid>$userId
+    `, { userId: GUEST_USER_ID });
 
     if (!user) {
-      user = await prisma.user.create({
-        data: { id: GUEST_USER_ID },
-      });
+      user = await edgedb.querySingle(`
+        INSERT User {
+          id := <uuid>$userId
+        }
+      `, { userId: GUEST_USER_ID });
     }
 
-    const wishlistItems = await prisma.wishlistItem.findMany({
-      where: { userId: user.id },
-      include: {
+    const wishlistItems = await edgedb.query(`
+      SELECT WishlistItem {
+        id,
+        target_price,
+        notes,
+        added_at,
         kit: {
-          include: {
-            priceEntries: {
-              orderBy: { recordedAt: 'desc' },
-              take: 1,
-            },
-            storeLinks: {
-              include: {
-                store: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { addedAt: 'desc' },
-    });
+          id,
+          name,
+          grade,
+          series,
+          scale,
+          image_url,
+          description,
+          store_links: {
+            id,
+            url,
+            store: {
+              id,
+              name,
+              website
+            }
+          }
+        }
+      }
+      FILTER .user.id = <uuid>$userId
+      ORDER BY .added_at DESC
+    `, { userId: user.id });
 
     // Calculate current prices
     const itemsWithPrices = await Promise.all(
-      wishlistItems.map(async (item) => {
-        const prices = await prisma.priceEntry.findMany({
-          where: { kitId: item.kitId },
-          orderBy: { recordedAt: 'desc' },
-        });
+      wishlistItems.map(async (item: any) => {
+        const prices = await edgedb.query(`
+          SELECT PriceEntry {
+            price
+          }
+          FILTER .kit.id = <uuid>$kitId
+          ORDER BY .recorded_at DESC
+        `, { kitId: item.kit.id });
 
-        const currentPrice = prices[0]?.price || null;
+        const priceValues = prices.map((p: any) => p.price);
+        const currentPrice = priceValues[0] || null;
         const averagePrice =
-          prices.length > 0
-            ? prices.reduce((sum, p) => sum + p.price, 0) / prices.length
+          priceValues.length > 0
+            ? priceValues.reduce((sum: number, p: number) => sum + p, 0) / priceValues.length
             : null;
 
         return {
@@ -82,34 +98,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let user = await prisma.user.findUnique({
-      where: { id: GUEST_USER_ID },
-    });
+    // Get or create guest user
+    let user = await edgedb.querySingle(`
+      SELECT User FILTER .id = <uuid>$userId
+    `, { userId: GUEST_USER_ID });
 
     if (!user) {
-      user = await prisma.user.create({
-        data: { id: GUEST_USER_ID },
-      });
+      user = await edgedb.querySingle(`
+        INSERT User {
+          id := <uuid>$userId
+        }
+      `, { userId: GUEST_USER_ID });
     }
 
-    const wishlistItem = await prisma.wishlistItem.upsert({
-      where: {
-        userId_kitId: {
-          userId: user.id,
-          kitId,
-        },
-      },
-      update: {
+    // Check if item already exists
+    const existing = await edgedb.querySingle(`
+      SELECT WishlistItem
+      FILTER .user.id = <uuid>$userId AND .kit.id = <uuid>$kitId
+    `, { userId: user.id, kitId });
+
+    let wishlistItem;
+    if (existing) {
+      wishlistItem = await edgedb.querySingle(`
+        UPDATE WishlistItem
+        FILTER .id = <uuid>$itemId
+        SET {
+          target_price := <optional float64>$targetPrice,
+          notes := <optional str>$notes
+        }
+      `, {
+        itemId: existing.id,
         targetPrice: targetPrice ? parseFloat(targetPrice) : null,
-        notes,
-      },
-      create: {
+        notes: notes || null,
+      });
+    } else {
+      wishlistItem = await edgedb.querySingle(`
+        INSERT WishlistItem {
+          user := (SELECT User FILTER .id = <uuid>$userId),
+          kit := (SELECT Kit FILTER .id = <uuid>$kitId),
+          target_price := <optional float64>$targetPrice,
+          notes := <optional str>$notes
+        }
+      `, {
         userId: user.id,
         kitId,
         targetPrice: targetPrice ? parseFloat(targetPrice) : null,
-        notes,
-      },
-    });
+        notes: notes || null,
+      });
+    }
 
     return NextResponse.json(wishlistItem, { status: 201 });
   } catch (error) {

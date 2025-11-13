@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma-client';
+import { edgedb } from '@/lib/edgedb-client';
 
 export async function GET(
   request: NextRequest,
@@ -13,14 +13,20 @@ export async function GET(
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const priceEntries = await prisma.priceEntry.findMany({
-      where: {
-        kitId: id,
-        recordedAt: {
-          gte: startDate,
-        },
-      },
-      orderBy: { recordedAt: 'asc' },
+    const priceEntries = await edgedb.query(`
+      SELECT PriceEntry {
+        id,
+        price,
+        currency,
+        in_stock,
+        recorded_at
+      }
+      FILTER .kit.id = <uuid>$kitId
+        AND .recorded_at >= <datetime>$startDate
+      ORDER BY .recorded_at ASC
+    `, {
+      kitId: id,
+      startDate: startDate.toISOString(),
     });
 
     return NextResponse.json(priceEntries);
@@ -50,14 +56,21 @@ export async function POST(
       );
     }
 
-    const priceEntry = await prisma.priceEntry.create({
-      data: {
-        kitId: id,
-        storeId: storeId || null,
-        price: parseFloat(price),
-        currency,
-        inStock,
-      },
+    const priceEntry = await edgedb.querySingle(`
+      INSERT PriceEntry {
+        kit := (SELECT Kit FILTER .id = <uuid>$kitId),
+        store := (SELECT Store FILTER .id = <uuid>$storeId) IF <bool>$hasStore ELSE <Store>{},
+        price := <float64>$price,
+        currency := <str>$currency,
+        in_stock := <bool>$inStock
+      }
+    `, {
+      kitId: id,
+      storeId: storeId || null,
+      hasStore: !!storeId,
+      price: parseFloat(price),
+      currency,
+      inStock,
     });
 
     return NextResponse.json(priceEntry, { status: 201 });

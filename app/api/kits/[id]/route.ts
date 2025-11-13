@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma-client';
+import { edgedb } from '@/lib/edgedb-client';
 
 export async function GET(
   request: NextRequest,
@@ -13,35 +13,51 @@ export async function GET(
       return NextResponse.json({ error: 'Kit ID is required' }, { status: 400 });
     }
 
-    const kit = await prisma.kit.findUnique({
-      where: { id },
-      include: {
-        priceEntries: {
-          orderBy: { recordedAt: 'desc' },
-          take: 10,
-        },
-        storeLinks: {
-          include: {
-            store: true,
-          },
-        },
-      },
-    });
+    const kit = await edgedb.querySingle(`
+      SELECT Kit {
+        id,
+        name,
+        grade,
+        series,
+        scale,
+        image_url,
+        description,
+        price_entries: {
+          id,
+          price,
+          recorded_at
+        } ORDER BY .recorded_at DESC LIMIT 10,
+        store_links: {
+          id,
+          url,
+          is_active,
+          store: {
+            id,
+            name,
+            website
+          }
+        }
+      }
+      FILTER .id = <uuid>$id
+    `, { id });
 
     if (!kit) {
       return NextResponse.json({ error: 'Kit not found' }, { status: 404 });
     }
 
     // Calculate price statistics
-    const prices = await prisma.priceEntry.findMany({
-      where: { kitId: kit.id },
-    });
+    const prices = await edgedb.query(`
+      SELECT PriceEntry {
+        price
+      }
+      FILTER .kit.id = <uuid>$kitId
+    `, { kitId: id });
 
-    const priceValues = prices.map((pe) => pe.price);
+    const priceValues = prices.map((p: any) => p.price);
     const currentPrice = priceValues[0] || null;
     const averagePrice =
       priceValues.length > 0
-        ? priceValues.reduce((sum, p) => sum + p, 0) / priceValues.length
+        ? priceValues.reduce((sum: number, p: number) => sum + p, 0) / priceValues.length
         : null;
     const minPrice = priceValues.length > 0 ? Math.min(...priceValues) : null;
     const maxPrice = priceValues.length > 0 ? Math.max(...priceValues) : null;
