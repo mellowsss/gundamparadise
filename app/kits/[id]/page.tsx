@@ -287,22 +287,23 @@ export default function KitDetailPage() {
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="date" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="date" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px'
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)', 
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    color: '#f1f5f9'
                   }} 
                 />
                 <Line
                   type="monotone"
                   dataKey="price"
-                  stroke="#2563eb"
+                  stroke="#60a5fa"
                   strokeWidth={3}
-                  dot={{ r: 4, fill: '#2563eb' }}
+                  dot={{ r: 4, fill: '#60a5fa' }}
                 />
               </LineChart>
             </ResponsiveContainer>
