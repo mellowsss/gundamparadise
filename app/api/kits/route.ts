@@ -14,6 +14,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Try to test connection first
+    try {
+      await edgedb.query('SELECT 1');
+    } catch (connError) {
+      console.warn('EdgeDB connection test failed:', connError);
+      // Return empty result instead of crashing
+      return NextResponse.json({
+        kits: [],
+        total: 0,
+        limit: 20,
+        offset: 0,
+      });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
     const grade = searchParams.get('grade') || '';
