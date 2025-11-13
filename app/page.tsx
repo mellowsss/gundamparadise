@@ -1,110 +1,73 @@
 import Link from 'next/link';
-import { Search, TrendingDown, Package, Heart, BarChart3 } from 'lucide-react';
+import { Search, TrendingDown, Package, Heart } from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Hero Section */}
-      <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-          Welcome to <span className="text-blue-600">Gundam Paradise</span>
-        </h1>
-        <p className="mt-6 text-lg leading-8 text-gray-600 max-w-2xl mx-auto">
-          Track Gundam model kit prices, manage your collection and wishlist, and never miss a deal on your favorite Gunpla.
-        </p>
-        <div className="mt-10 flex items-center justify-center gap-x-6">
-          <Link
-            href="/search"
-            className="rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-          >
-            Search Kits
-          </Link>
-          <Link
-            href="/wishlist"
-            className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
-          >
-            View Wishlist <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Features Grid */}
-      <div className="mt-24">
-        <div className="mx-auto max-w-2xl lg:text-center">
-          <h2 className="text-base font-semibold leading-7 text-blue-600">Features</h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Everything you need to track Gunpla
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+        {/* Hero Section */}
+        <div className="text-center">
+          <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-7xl">
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Gundam Paradise
+            </span>
+          </h1>
+          <p className="mt-6 text-xl leading-8 text-gray-600 max-w-2xl mx-auto">
+            Track prices, manage your collection, and never miss a deal on your favorite Gunpla.
           </p>
+          <div className="mt-10 flex items-center justify-center gap-x-4">
+            <Link
+              href="/search"
+              className="rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors"
+            >
+              <Search className="inline h-5 w-5 mr-2" />
+              Search Kits
+            </Link>
+            <Link
+              href="/wishlist"
+              className="rounded-lg border-2 border-gray-300 bg-white px-8 py-3 text-base font-semibold text-gray-700 hover:border-blue-600 hover:text-blue-600 transition-colors"
+            >
+              <Heart className="inline h-5 w-5 mr-2" />
+              My Wishlist
+            </Link>
+          </div>
         </div>
-        <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-          <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
-            <div className="flex flex-col">
-              <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                <Search className="h-5 w-5 flex-none text-blue-600" />
-                Search & Browse
-              </dt>
-              <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
-                <p className="flex-auto">
-                  Search through thousands of Gundam kits by grade (HG, RG, MG, PG), series, and more. Filter and find exactly what you're looking for.
-                </p>
-              </dd>
+
+        {/* Quick Stats */}
+        <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center">
+              <div className="rounded-lg bg-blue-100 p-3">
+                <Search className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Kits Tracked</p>
+                <p className="text-2xl font-bold text-gray-900">500+</p>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                <TrendingDown className="h-5 w-5 flex-none text-blue-600" />
-                Price Tracking
-              </dt>
-              <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
-                <p className="flex-auto">
-                  Track current prices, view price history charts, and see average prices across multiple stores. Get alerts when prices drop.
-                </p>
-              </dd>
+          </div>
+          <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center">
+              <div className="rounded-lg bg-green-100 p-3">
+                <TrendingDown className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Price Alerts</p>
+                <p className="text-2xl font-bold text-gray-900">Active</p>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                <Package className="h-5 w-5 flex-none text-blue-600" />
-                Collection Management
-              </dt>
-              <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
-                <p className="flex-auto">
-                  Organize your collection and wishlist. Track what you own, what you want, and how much you've spent.
-                </p>
-              </dd>
+          </div>
+          <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center">
+              <div className="rounded-lg bg-purple-100 p-3">
+                <Package className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Stores</p>
+                <p className="text-2xl font-bold text-gray-900">10+</p>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                <Heart className="h-5 w-5 flex-none text-blue-600" />
-                Wishlist
-              </dt>
-              <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
-                <p className="flex-auto">
-                  Save kits you want to buy. Set target prices and get notified when they're available at your price point.
-                </p>
-              </dd>
-            </div>
-            <div className="flex flex-col">
-              <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                <BarChart3 className="h-5 w-5 flex-none text-blue-600" />
-                Statistics
-              </dt>
-              <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
-                <p className="flex-auto">
-                  View detailed statistics about your collection, spending, and wishlist. See how much you've invested in your hobby.
-                </p>
-              </dd>
-            </div>
-            <div className="flex flex-col">
-              <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                <TrendingDown className="h-5 w-5 flex-none text-blue-600" />
-                Price Alerts
-              </dt>
-              <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
-                <p className="flex-auto">
-                  Set up alerts for price drops, back-in-stock notifications, and sales. Never miss a good deal again.
-                </p>
-              </dd>
-            </div>
-          </dl>
+          </div>
         </div>
       </div>
     </div>
