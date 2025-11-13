@@ -111,18 +111,18 @@ export default function KitDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-gray-500">Loading kit details...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 flex items-center justify-center">
+        <div className="text-blue-300 text-lg">Loading kit details...</div>
       </div>
     );
   }
 
   if (!kit) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-500 mb-4">Kit not found</p>
-          <Link href="/search" className="text-blue-600 hover:text-blue-700">
+          <p className="text-gray-300 mb-4 text-lg">Kit not found</p>
+          <Link href="/search" className="text-blue-400 hover:text-blue-300 transition-colors">
             Browse all kits →
           </Link>
         </div>
@@ -137,11 +137,11 @@ export default function KitDetailPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Image */}
-          <div className="aspect-square w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
+          <div className="aspect-square w-full overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-br from-slate-800/50 to-slate-900/50 shadow-2xl backdrop-blur-sm">
             {kit.imageUrl ? (
               <Image
                 src={kit.imageUrl}
@@ -176,44 +176,44 @@ export default function KitDetailPage() {
               )}
             </div>
 
-            <h1 className="text-4xl font-bold text-gray-900">{kit.name}</h1>
+            <h1 className="text-4xl font-bold text-white">{kit.name}</h1>
 
             {kit.description && (
-              <p className="text-lg text-gray-600 leading-relaxed">{kit.description}</p>
+              <p className="text-lg text-blue-200 leading-relaxed">{kit.description}</p>
             )}
 
             {/* Price Info */}
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Price Information</h2>
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm">
+              <h2 className="mb-4 text-lg font-semibold text-white">Price Information</h2>
               <div className="grid grid-cols-2 gap-4">
                 {kit.currentPrice && (
                   <div>
-                    <div className="text-sm font-medium text-gray-500">Current Price</div>
-                    <div className="text-3xl font-bold text-green-600">
+                    <div className="text-sm font-medium text-blue-200">Current Price</div>
+                    <div className="text-3xl font-bold text-green-400">
                       ${kit.currentPrice.toFixed(2)}
                     </div>
                   </div>
                 )}
                 {kit.averagePrice && (
                   <div>
-                    <div className="text-sm font-medium text-gray-500">Average Price</div>
-                    <div className="text-3xl font-bold text-gray-700">
+                    <div className="text-sm font-medium text-blue-200">Average Price</div>
+                    <div className="text-3xl font-bold text-white">
                       ${kit.averagePrice.toFixed(2)}
                     </div>
                   </div>
                 )}
                 {kit.minPrice && (
                   <div>
-                    <div className="text-sm font-medium text-gray-500">Lowest</div>
-                    <div className="text-xl font-semibold text-blue-600">
+                    <div className="text-sm font-medium text-blue-200">Lowest</div>
+                    <div className="text-xl font-semibold text-blue-400">
                       ${kit.minPrice.toFixed(2)}
                     </div>
                   </div>
                 )}
                 {kit.maxPrice && (
                   <div>
-                    <div className="text-sm font-medium text-gray-500">Highest</div>
-                    <div className="text-xl font-semibold text-red-600">
+                    <div className="text-sm font-medium text-blue-200">Highest</div>
+                    <div className="text-xl font-semibold text-red-400">
                       ${kit.maxPrice.toFixed(2)}
                     </div>
                   </div>
@@ -225,14 +225,14 @@ export default function KitDetailPage() {
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={addToWishlist}
-                className="flex items-center space-x-2 rounded-lg bg-pink-600 px-6 py-3 font-semibold text-white shadow-lg hover:bg-pink-700 transition-colors"
+                className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 px-6 py-3 font-semibold text-white shadow-2xl transition-all hover:scale-105 hover:shadow-pink-500/50"
               >
                 <Heart className="h-5 w-5" />
                 <span>Add to Wishlist</span>
               </button>
               <button
                 onClick={addToCollection}
-                className="flex items-center space-x-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 font-semibold text-white shadow-2xl transition-all hover:scale-105 hover:shadow-blue-500/50"
               >
                 <Plus className="h-5 w-5" />
                 <span>Add to Collection</span>
@@ -241,8 +241,8 @@ export default function KitDetailPage() {
 
             {/* Store Links */}
             {kit.storeLinks && kit.storeLinks.length > 0 && (
-              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm">
+                <h2 className="mb-4 flex items-center text-lg font-semibold text-white">
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Where to Buy
                 </h2>
@@ -253,11 +253,11 @@ export default function KitDetailPage() {
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded-lg border-2 border-gray-200 bg-gray-50 p-4 transition-all hover:border-blue-500 hover:bg-blue-50 hover:shadow-md"
+                      className="flex items-center justify-between rounded-xl border-2 border-white/20 bg-white/10 p-4 backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20"
                     >
                       <div className="flex items-center space-x-3">
-                        <ShoppingCart className="h-5 w-5 text-blue-600" />
-                        <span className="font-semibold text-gray-900">{link.store.name}</span>
+                        <ShoppingCart className="h-5 w-5 text-blue-400" />
+                        <span className="font-semibold text-white">{link.store.name}</span>
                       </div>
                       <ExternalLink className="h-5 w-5 text-gray-400" />
                     </a>
@@ -269,13 +269,13 @@ export default function KitDetailPage() {
         </div>
 
         {/* Price History Chart */}
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Price History</h2>
+            <h2 className="text-lg font-semibold text-white">Price History</h2>
             <select
               value={days}
               onChange={(e) => setDays(Number(e.target.value))}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
             >
               <option value={7}>Last 7 days</option>
               <option value={30}>Last 30 days</option>
@@ -307,7 +307,7 @@ export default function KitDetailPage() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center py-12 text-gray-500">
+            <div className="flex items-center justify-center py-12 text-gray-400">
               No price history available
             </div>
           )}
