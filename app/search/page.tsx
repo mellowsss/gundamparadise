@@ -67,34 +67,34 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mx-auto max-w-4xl text-center mb-10">
-          <h1 className="mb-3 text-5xl font-black text-white sm:text-6xl">
+        <div className="mx-auto max-w-4xl text-center mb-12">
+          <h1 className="mb-4 text-5xl font-black text-white sm:text-6xl lg:text-7xl">
             Search <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Gundams</span>
           </h1>
           <p className="text-xl text-white/60">Find and track your favorite Gunpla model kits</p>
         </div>
 
         {/* Search Bar */}
-        <div className="mx-auto max-w-3xl mb-6">
+        <div className="mx-auto max-w-3xl mb-8">
           <div className="relative">
-            <Search className="absolute left-5 top-1/2 h-6 w-6 -translate-y-1/2 text-white/40" />
+            <Search className="absolute left-6 top-1/2 h-6 w-6 -translate-y-1/2 text-white/40" />
             <input
               type="text"
               placeholder="Search by kit name, grade, or series..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border-2 border-white/10 bg-white/5 py-4 pl-14 pr-6 text-lg text-white placeholder-white/40 backdrop-blur-sm focus:border-blue-500/50 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all"
+              className="w-full rounded-2xl border-2 border-white/10 bg-white/5 py-5 pl-16 pr-6 text-lg text-white placeholder-white/40 backdrop-blur-sm focus:border-blue-500/50 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all"
             />
           </div>
         </div>
 
         {/* Filters */}
-        <div className="mx-auto max-w-3xl mb-6 flex flex-wrap items-center justify-center gap-3">
+        <div className="mx-auto max-w-3xl mb-8 flex flex-wrap items-center justify-center gap-4">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 rounded-xl border-2 px-5 py-2.5 text-sm font-bold transition-all ${
+            className={`flex items-center gap-2 rounded-xl border-2 px-6 py-3 text-sm font-bold transition-all ${
               showFilters
                 ? 'border-blue-500/50 bg-blue-500/20 text-blue-300'
                 : 'border-white/10 bg-white/5 text-white/80 hover:border-white/20 hover:bg-white/10'
@@ -107,7 +107,7 @@ export default function SearchPage() {
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-2 rounded-xl border-2 border-red-500/30 bg-red-500/10 px-5 py-2.5 text-sm font-bold text-red-400 hover:bg-red-500/20 transition-all"
+              className="flex items-center gap-2 rounded-xl border-2 border-red-500/30 bg-red-500/10 px-6 py-3 text-sm font-bold text-red-400 hover:bg-red-500/20 transition-all"
             >
               <X className="h-4 w-4" />
               Clear All
@@ -115,7 +115,7 @@ export default function SearchPage() {
           )}
 
           {kits.length > 0 && !loading && (
-            <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/80 backdrop-blur-sm">
+            <div className="rounded-xl bg-white/5 border border-white/10 px-5 py-3 text-sm font-semibold text-white/80 backdrop-blur-sm">
               {kits.length} {kits.length === 1 ? 'Gundam' : 'Gundams'} found
             </div>
           )}
@@ -123,16 +123,16 @@ export default function SearchPage() {
 
         {/* Filter Panel */}
         {showFilters && (
-          <div className="mx-auto max-w-3xl mb-8 rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="mx-auto max-w-3xl mb-10 rounded-2xl border-2 border-white/10 bg-white/5 p-8 backdrop-blur-sm animate-fade-in">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
               <div>
-                <label className="mb-3 block text-sm font-bold text-white text-center">
+                <label className="mb-4 block text-center text-sm font-bold text-white">
                   Grade
                 </label>
                 <select
                   value={selectedGrade}
                   onChange={(e) => setSelectedGrade(e.target.value)}
-                  className="w-full rounded-lg border-2 border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white focus:border-blue-500/50 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all"
+                  className="w-full rounded-xl border-2 border-white/10 bg-white/5 px-5 py-4 text-sm font-medium text-white focus:border-blue-500/50 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all"
                 >
                   <option value="">All Grades</option>
                   {GRADES.map((grade) => (
@@ -143,13 +143,13 @@ export default function SearchPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-3 block text-sm font-bold text-white text-center">
+                <label className="mb-4 block text-center text-sm font-bold text-white">
                   Series
                 </label>
                 <select
                   value={selectedSeries}
                   onChange={(e) => setSelectedSeries(e.target.value)}
-                  className="w-full rounded-lg border-2 border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white focus:border-blue-500/50 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all"
+                  className="w-full rounded-xl border-2 border-white/10 bg-white/5 px-5 py-4 text-sm font-medium text-white focus:border-blue-500/50 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all"
                 >
                   <option value="">All Series</option>
                   {SERIES.map((series) => (
@@ -165,22 +165,24 @@ export default function SearchPage() {
 
         {/* Results */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex items-center justify-center py-32">
             <div className="text-center">
-              <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-blue-400" />
+              <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-blue-400" />
               <p className="text-sm font-medium text-white/60">Loading Gundams...</p>
             </div>
           </div>
         ) : kits.length === 0 ? (
-          <div className="mx-auto max-w-md rounded-xl border-2 border-white/10 bg-white/5 p-20 text-center backdrop-blur-sm">
-            <Search className="mx-auto mb-4 h-16 w-16 text-white/20" />
+          <div className="mx-auto max-w-md rounded-2xl border-2 border-white/10 bg-white/5 p-20 text-center backdrop-blur-sm">
+            <Search className="mx-auto mb-4 h-20 w-20 text-white/20" />
             <p className="mb-2 text-xl font-bold text-white">No Gundams found</p>
             <p className="text-sm text-white/60">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="mx-auto max-w-6xl grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {kits.map((kit) => (
-              <KitCard key={kit.id} kit={kit} />
+          <div className="mx-auto max-w-6xl grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {kits.map((kit, index) => (
+              <div key={kit.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.05}s` }}>
+                <KitCard kit={kit} />
+              </div>
             ))}
           </div>
         )}
