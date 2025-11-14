@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { edgedb } from '@/lib/edgedb-client';
+import { checkEdgeDB } from '@/lib/edgedb-utils';
 import { transformObject } from '@/lib/transform';
 
 export async function GET(
@@ -7,6 +7,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const edgedb = checkEdgeDB();
+    if (!edgedb) {
+      return NextResponse.json([]);
+    }
+
     const resolvedParams = await params;
     const { id } = resolvedParams;
     const days = parseInt(request.nextUrl.searchParams.get('days') || '30');
@@ -55,6 +60,11 @@ export async function POST(
         { error: 'Price is required' },
         { status: 400 }
       );
+    }
+
+    const edgedb = checkEdgeDB();
+    if (!edgedb) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
     const priceEntry = await edgedb.querySingle(`

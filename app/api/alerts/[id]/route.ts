@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { edgedb } from '@/lib/edgedb-client';
+import { checkEdgeDB } from '@/lib/edgedb-utils';
 
 const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -8,6 +8,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const edgedb = checkEdgeDB();
+    if (!edgedb) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    }
+
     const resolvedParams = await params;
     const { id } = resolvedParams;
 
@@ -37,6 +42,11 @@ export async function PATCH(
     const { id } = resolvedParams;
     const body = await request.json();
     const { isActive } = body;
+
+    const edgedb = checkEdgeDB();
+    if (!edgedb) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    }
 
     const alert = await edgedb.querySingle(`
       UPDATE PriceAlert

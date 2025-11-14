@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { edgedb } from '@/lib/edgedb-client';
+import { checkEdgeDB } from '@/lib/edgedb-utils';
 import { transformObject } from '@/lib/transform';
 
 const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export async function GET(request: NextRequest) {
   try {
+    const edgedb = checkEdgeDB();
+    if (!edgedb) {
+      return NextResponse.json([]);
+    }
+
     // Get or create guest user
     let user = await edgedb.querySingle(`
       SELECT User FILTER .id = <uuid>$userId
@@ -62,6 +67,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const edgedb = checkEdgeDB();
+    if (!edgedb) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    }
+
     const body = await request.json();
     const { kitId, targetPrice, alertType = 'price_drop' } = body;
 

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { edgedb } from '@/lib/edgedb-client';
+import { checkEdgeDB } from '@/lib/edgedb-utils';
 import { transformObject } from '@/lib/transform';
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if EdgeDB is configured
-    if (!process.env.EDGEDB_INSTANCE || !process.env.EDGEDB_SECRET_KEY) {
+    const edgedb = checkEdgeDB();
+    if (!edgedb) {
       return NextResponse.json({
         kits: [],
         total: 0,
@@ -132,6 +132,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const edgedb = checkEdgeDB();
+    if (!edgedb) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    }
+
     const body = await request.json();
     const { name, grade, series, scale, releaseDate, imageUrl, description, storeLinks } = body;
 

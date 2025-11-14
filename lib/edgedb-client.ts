@@ -1,32 +1,30 @@
 import { createClient } from 'edgedb';
 
-// EdgeDB client for Vercel
-// EdgeDB automatically uses EDGEDB_INSTANCE and EDGEDB_SECRET_KEY from environment variables
+// EdgeDB client for Vercel - completely safe, never throws
 const globalForEdgeDB = globalThis as unknown as {
   edgedb: ReturnType<typeof createClient> | undefined;
 };
 
-// Create client with error handling - won't crash if env vars are missing
-let edgedbClient: ReturnType<typeof createClient>;
+// Create a safe client that never crashes the app
+let edgedbClient: ReturnType<typeof createClient> | null = null;
 
-try {
-  // Always create client - EdgeDB will handle connection at query time
-  edgedbClient = globalForEdgeDB.edgedb ?? createClient();
-  
-  if (process.env.NODE_ENV !== 'production') {
-    globalForEdgeDB.edgedb = edgedbClient;
-  }
-} catch (error) {
-  console.warn('EdgeDB client initialization warning:', error);
-  // Create client anyway - errors will be handled at query time
+// Only initialize if we're in a Node.js environment (not during build)
+if (typeof window === 'undefined') {
   try {
-    edgedbClient = createClient();
-  } catch (e) {
-    // If createClient itself fails, we'll handle it in API routes
-    console.error('Failed to create EdgeDB client:', e);
-    // @ts-ignore - This is a fallback, queries will fail gracefully
-    edgedbClient = null as any;
+    // Check if environment variables exist
+    if (process.env.EDGEDB_INSTANCE && process.env.EDGEDB_SECRET_KEY) {
+      edgedbClient = globalForEdgeDB.edgedb ?? createClient();
+      
+      if (process.env.NODE_ENV !== 'production') {
+        globalForEdgeDB.edgedb = edgedbClient;
+      }
+    }
+  } catch (error) {
+    // Silently fail - app will work without EdgeDB
+    console.warn('EdgeDB client initialization skipped:', error);
+    edgedbClient = null;
   }
 }
 
+// Export a safe client that handles null gracefully
 export const edgedb = edgedbClient;
