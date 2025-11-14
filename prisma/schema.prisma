@@ -1,112 +1,107 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  // directUrl is optional - only needed for migrations
-  // directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String          @id @default(cuid())
-  email         String?         @unique
-  name          String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  wishlistItems WishlistItem[]
+  id              String           @id @default(cuid())
+  email           String?          @unique
+  name            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   collectionItems CollectionItem[]
-  priceAlerts   PriceAlert[]
+  priceAlerts     PriceAlert[]
+  wishlistItems   WishlistItem[]
 }
 
 model Kit {
-  id            String          @id @default(cuid())
-  name          String
-  grade         String          // HG, RG, MG, PG, SD, etc.
-  series        String?         // Gundam series (UC, SEED, 00, etc.)
-  scale         String?         // 1/144, 1/100, 1/60, etc.
-  releaseDate   DateTime?
-  imageUrl      String?
-  description   String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  priceEntries  PriceEntry[]
-  storeLinks    StoreLink[]
-  wishlistItems WishlistItem[]
+  id              String           @id @default(cuid())
+  name            String
+  grade           String
+  series          String?
+  scale           String?
+  releaseDate     DateTime?
+  imageUrl        String?
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   collectionItems CollectionItem[]
-  priceAlerts   PriceAlert[]
-  
+  priceAlerts     PriceAlert[]
+  priceEntries    PriceEntry[]
+  storeLinks      StoreLink[]
+  wishlistItems   WishlistItem[]
+
   @@index([grade])
   @@index([name])
 }
 
 model Store {
-  id        String      @id @default(cuid())
-  name      String      @unique
-  website   String
-  logoUrl   String?
-  createdAt DateTime    @default(now())
+  id         String      @id @default(cuid())
+  name       String      @unique
+  website    String
+  logoUrl    String?
+  createdAt  DateTime    @default(now())
   storeLinks StoreLink[]
 }
 
 model StoreLink {
-  id          String    @id @default(cuid())
-  kitId       String
-  storeId     String
-  url         String
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  kit         Kit       @relation(fields: [kitId], references: [id], onDelete: Cascade)
-  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  
+  id        String   @id @default(cuid())
+  kitId     String
+  storeId   String
+  url       String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  kit       Kit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
   @@unique([kitId, storeId])
   @@index([kitId])
 }
 
 model PriceEntry {
-  id          String    @id @default(cuid())
-  kitId       String
+  id         String   @id @default(cuid())
+  kitId      String
   storeId    String?
-  price       Float
-  currency    String    @default("USD")
-  inStock     Boolean   @default(true)
-  recordedAt  DateTime  @default(now())
-  kit         Kit       @relation(fields: [kitId], references: [id], onDelete: Cascade)
-  
+  price      Float
+  currency   String   @default("USD")
+  inStock    Boolean  @default(true)
+  recordedAt DateTime @default(now())
+  kit        Kit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
+
   @@index([kitId])
   @@index([recordedAt])
 }
 
 model WishlistItem {
-  id            String    @id @default(cuid())
-  userId        String
-  kitId         String
-  targetPrice   Float?
-  notes         String?
-  addedAt       DateTime  @default(now())
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kit           Kit       @relation(fields: [kitId], references: [id], onDelete: Cascade)
-  
+  id          String   @id @default(cuid())
+  userId      String
+  kitId       String
+  targetPrice Float?
+  notes       String?
+  addedAt     DateTime @default(now())
+  kit         Kit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([userId, kitId])
   @@index([userId])
 }
 
 model CollectionItem {
-  id          String    @id @default(cuid())
-  userId      String
-  kitId       String
+  id            String    @id @default(cuid())
+  userId        String
+  kitId         String
   purchasePrice Float?
-  purchaseDate DateTime?
-  notes       String?
-  addedAt     DateTime  @default(now())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kit         Kit       @relation(fields: [kitId], references: [id], onDelete: Cascade)
-  
+  purchaseDate  DateTime?
+  notes         String?
+  addedAt       DateTime  @default(now())
+  kit           Kit       @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([userId, kitId])
   @@index([userId])
 }
@@ -116,13 +111,13 @@ model PriceAlert {
   userId      String
   kitId       String
   targetPrice Float?
-  alertType   String    // "price_drop", "back_in_stock", "sale"
+  alertType   String
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   triggeredAt DateTime?
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   kit         Kit       @relation(fields: [kitId], references: [id], onDelete: Cascade)
-  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([kitId])
   @@index([isActive])
