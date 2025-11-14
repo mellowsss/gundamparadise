@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, X, Grid3x3, List, Loader2 } from 'lucide-react';
+import { Search, Filter, X, Loader2 } from 'lucide-react';
 import KitCard from '@/components/KitCard';
 
 const GRADES = ['HG', 'RG', 'MG', 'PG', 'SD', 'EG', 'FM', 'RE/100'];
@@ -66,10 +66,10 @@ export default function SearchPage() {
   const hasActiveFilters = search || selectedGrade || selectedSeries;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-10 text-center">
+        <div className="mx-auto max-w-4xl text-center mb-10">
           <h1 className="mb-3 text-5xl font-black text-white sm:text-6xl">
             Search <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Gundams</span>
           </h1>
@@ -77,7 +77,7 @@ export default function SearchPage() {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-6">
+        <div className="mx-auto max-w-3xl mb-6">
           <div className="relative">
             <Search className="absolute left-5 top-1/2 h-6 w-6 -translate-y-1/2 text-white/40" />
             <input
@@ -91,7 +91,7 @@ export default function SearchPage() {
         </div>
 
         {/* Filters */}
-        <div className="mb-6 flex flex-wrap items-center gap-3">
+        <div className="mx-auto max-w-3xl mb-6 flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 rounded-xl border-2 px-5 py-2.5 text-sm font-bold transition-all ${
@@ -115,7 +115,7 @@ export default function SearchPage() {
           )}
 
           {kits.length > 0 && !loading && (
-            <div className="ml-auto rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/80 backdrop-blur-sm">
+            <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/80 backdrop-blur-sm">
               {kits.length} {kits.length === 1 ? 'Gundam' : 'Gundams'} found
             </div>
           )}
@@ -123,10 +123,10 @@ export default function SearchPage() {
 
         {/* Filter Panel */}
         {showFilters && (
-          <div className="mb-8 rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+          <div className="mx-auto max-w-3xl mb-8 rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="mb-3 block text-sm font-bold text-white">
+                <label className="mb-3 block text-sm font-bold text-white text-center">
                   Grade
                 </label>
                 <select
@@ -143,7 +143,7 @@ export default function SearchPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-3 block text-sm font-bold text-white">
+                <label className="mb-3 block text-sm font-bold text-white text-center">
                   Series
                 </label>
                 <select
@@ -172,13 +172,13 @@ export default function SearchPage() {
             </div>
           </div>
         ) : kits.length === 0 ? (
-          <div className="rounded-xl border-2 border-white/10 bg-white/5 p-20 text-center backdrop-blur-sm">
+          <div className="mx-auto max-w-md rounded-xl border-2 border-white/10 bg-white/5 p-20 text-center backdrop-blur-sm">
             <Search className="mx-auto mb-4 h-16 w-16 text-white/20" />
             <p className="mb-2 text-xl font-bold text-white">No Gundams found</p>
             <p className="text-sm text-white/60">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mx-auto max-w-6xl grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {kits.map((kit) => (
               <KitCard key={kit.id} kit={kit} />
             ))}

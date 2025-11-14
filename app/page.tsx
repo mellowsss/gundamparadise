@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Search, TrendingDown, Package, Heart, Sparkles, ArrowRight, Star, Zap } from 'lucide-react';
+import { Search, TrendingDown, Package, Heart, Sparkles, ArrowRight } from 'lucide-react';
 import KitCard from '@/components/KitCard';
 
 interface Kit {
@@ -45,13 +45,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950">
       {/* Hero Section */}
       <div className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.15),transparent_70%)]"></div>
         
-        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center">
+        <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 px-6 py-2.5 text-sm font-bold text-blue-300 backdrop-blur-sm">
               <Sparkles className="h-4 w-4" />
               <span>Track. Manage. Collect.</span>
@@ -95,7 +95,7 @@ export default function Home() {
 
       {/* Featured Gundams Section */}
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-12 text-center">
+        <div className="mx-auto max-w-4xl text-center mb-12">
           <h2 className="mb-4 text-4xl font-black text-white sm:text-5xl">
             Featured <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Gundams</span>
           </h2>
@@ -110,13 +110,13 @@ export default function Home() {
             </div>
           </div>
         ) : featuredKits.length === 0 ? (
-          <div className="rounded-xl border-2 border-white/10 bg-white/5 p-16 text-center backdrop-blur-sm">
+          <div className="mx-auto max-w-md rounded-xl border-2 border-white/10 bg-white/5 p-16 text-center backdrop-blur-sm">
             <Package className="mx-auto mb-4 h-16 w-16 text-white/20" />
             <p className="mb-2 text-lg font-bold text-white">No Gundams available</p>
             <p className="text-sm text-white/60">Check back later for featured Gundams</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mx-auto max-w-6xl grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {featuredKits.map((kit) => (
               <KitCard key={kit.id} kit={kit} />
             ))}
@@ -137,13 +137,13 @@ export default function Home() {
       {/* Features Section */}
       <div className="border-t border-white/10 bg-white/5 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center">
+          <div className="mx-auto max-w-4xl text-center mb-12">
             <h2 className="mb-4 text-3xl font-black text-white sm:text-4xl">Why Choose Gundam Paradise?</h2>
             <p className="text-lg text-white/60">Everything you need to manage your Gunpla collection</p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            <div className="group rounded-xl border-2 border-white/10 bg-gradient-to-br from-blue-500/10 to-blue-600/10 p-8 backdrop-blur-sm transition-all hover:border-blue-500/30 hover:scale-105">
+          <div className="mx-auto max-w-5xl grid grid-cols-1 gap-8 md:grid-cols-3">
+            <div className="group rounded-xl border-2 border-white/10 bg-gradient-to-br from-blue-500/10 to-blue-600/10 p-8 backdrop-blur-sm transition-all hover:border-blue-500/30 hover:scale-105 text-center">
               <div className="mb-4 inline-flex rounded-xl bg-blue-500/20 p-4">
                 <TrendingDown className="h-8 w-8 text-blue-400" />
               </div>
@@ -151,7 +151,7 @@ export default function Home() {
               <p className="text-white/70">Track price history and get alerts when prices drop to your target</p>
             </div>
 
-            <div className="group rounded-xl border-2 border-white/10 bg-gradient-to-br from-purple-500/10 to-purple-600/10 p-8 backdrop-blur-sm transition-all hover:border-purple-500/30 hover:scale-105">
+            <div className="group rounded-xl border-2 border-white/10 bg-gradient-to-br from-purple-500/10 to-purple-600/10 p-8 backdrop-blur-sm transition-all hover:border-purple-500/30 hover:scale-105 text-center">
               <div className="mb-4 inline-flex rounded-xl bg-purple-500/20 p-4">
                 <Package className="h-8 w-8 text-purple-400" />
               </div>
@@ -159,7 +159,7 @@ export default function Home() {
               <p className="text-white/70">Keep track of your Gunpla collection and monitor your spending</p>
             </div>
 
-            <div className="group rounded-xl border-2 border-white/10 bg-gradient-to-br from-pink-500/10 to-pink-600/10 p-8 backdrop-blur-sm transition-all hover:border-pink-500/30 hover:scale-105">
+            <div className="group rounded-xl border-2 border-white/10 bg-gradient-to-br from-pink-500/10 to-pink-600/10 p-8 backdrop-blur-sm transition-all hover:border-pink-500/30 hover:scale-105 text-center">
               <div className="mb-4 inline-flex rounded-xl bg-pink-500/20 p-4">
                 <Heart className="h-8 w-8 text-pink-400" />
               </div>

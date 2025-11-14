@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Package, DollarSign, ShoppingCart, ExternalLink, Star } from 'lucide-react';
+import { Package, DollarSign, ShoppingCart, ExternalLink } from 'lucide-react';
 
 interface KitCardProps {
   kit: {
@@ -25,7 +25,7 @@ interface KitCardProps {
 
 export default function KitCard({ kit }: KitCardProps) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border-2 border-white/10 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl transition-all hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-[1.02]">
+    <div className="group relative mx-auto w-full max-w-sm overflow-hidden rounded-2xl border-2 border-white/10 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl transition-all hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-[1.02]">
       <Link href={`/kits/${kit.id}`}>
         {/* Image Container */}
         <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-slate-900 to-black">
@@ -64,7 +64,7 @@ export default function KitCard({ kit }: KitCardProps) {
       <div className="p-5">
         {/* Series Badge */}
         {kit.series && (
-          <div className="mb-3">
+          <div className="mb-3 text-center">
             <span className="rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold text-white/70 backdrop-blur-sm">
               {kit.series}
             </span>
@@ -73,22 +73,22 @@ export default function KitCard({ kit }: KitCardProps) {
         
         {/* Name */}
         <Link href={`/kits/${kit.id}`}>
-          <h3 className="mb-2 line-clamp-2 text-lg font-black text-white transition-colors group-hover:text-blue-400">
+          <h3 className="mb-2 text-center line-clamp-2 text-lg font-black text-white transition-colors group-hover:text-blue-400">
             {kit.name}
           </h3>
         </Link>
         
         {/* Scale */}
         {kit.scale && (
-          <p className="mb-4 text-xs font-semibold text-white/50">Scale: {kit.scale}</p>
+          <p className="mb-4 text-center text-xs font-semibold text-white/50">Scale: {kit.scale}</p>
         )}
         
         {/* Price */}
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-center">
           {kit.currentPrice ? (
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-green-400" />
-              <div>
+              <div className="text-center">
                 <span className="text-2xl font-black text-green-400">
                   ${kit.currentPrice.toFixed(2)}
                 </span>
@@ -107,8 +107,8 @@ export default function KitCard({ kit }: KitCardProps) {
         {/* Store Links */}
         {kit.storeLinks && kit.storeLinks.length > 0 && (
           <div className="space-y-2 border-t border-white/10 pt-4">
-            <p className="text-xs font-black uppercase tracking-wider text-white/50">Buy Now</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="text-center text-xs font-black uppercase tracking-wider text-white/50">Buy Now</p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
               {kit.storeLinks.slice(0, 2).map((link) => (
                 <a
                   key={link.id}

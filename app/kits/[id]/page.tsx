@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { Package, DollarSign, ExternalLink, Heart, Plus, ShoppingCart, ArrowLeft, Star } from 'lucide-react';
+import { Package, DollarSign, ExternalLink, Heart, Plus, ShoppingCart, ArrowLeft } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Link from 'next/link';
 
@@ -137,43 +137,47 @@ export default function KitDetailPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <Link
-          href="/search"
-          className="mb-6 inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to search
-        </Link>
+        <div className="mx-auto max-w-4xl mb-6">
+          <Link
+            href="/search"
+            className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to search
+          </Link>
+        </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="mx-auto max-w-6xl grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Image */}
-          <div className="aspect-square w-full overflow-hidden rounded-2xl border-2 border-white/10 bg-gradient-to-br from-slate-900 to-black">
-            {kit.imageUrl ? (
-              <Image
-                src={kit.imageUrl}
-                alt={kit.name}
-                width={800}
-                height={800}
-                className="h-full w-full object-cover"
-                unoptimized
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <Package className="h-32 w-32 text-white/20" />
-              </div>
-            )}
+          <div className="mx-auto w-full max-w-lg">
+            <div className="aspect-square w-full overflow-hidden rounded-2xl border-2 border-white/10 bg-gradient-to-br from-slate-900 to-black">
+              {kit.imageUrl ? (
+                <Image
+                  src={kit.imageUrl}
+                  alt={kit.name}
+                  width={800}
+                  height={800}
+                  className="h-full w-full object-cover"
+                  unoptimized
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <Package className="h-32 w-32 text-white/20" />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Details */}
-          <div className="space-y-6">
+          <div className="mx-auto w-full max-w-lg space-y-6">
             {/* Badges */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <span className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-black text-white shadow-lg">
                 {kit.grade}
               </span>
@@ -189,15 +193,15 @@ export default function KitDetailPage() {
               )}
             </div>
 
-            <h1 className="text-4xl font-black text-white sm:text-5xl">{kit.name}</h1>
+            <h1 className="text-center text-4xl font-black text-white sm:text-5xl">{kit.name}</h1>
 
             {kit.description && (
-              <p className="text-lg text-white/70 leading-relaxed">{kit.description}</p>
+              <p className="text-center text-lg text-white/70 leading-relaxed">{kit.description}</p>
             )}
 
             {/* Price Info */}
             <div className="rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-              <h2 className="mb-4 text-xl font-bold text-white">Pricing</h2>
+              <h2 className="mb-4 text-center text-xl font-bold text-white">Pricing</h2>
               <div className="space-y-3">
                 {kit.currentPrice && (
                   <div className="flex items-center justify-between">
@@ -227,7 +231,7 @@ export default function KitDetailPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={addToWishlist}
                 className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-pink-500/50"
@@ -247,7 +251,7 @@ export default function KitDetailPage() {
             {/* Store Links */}
             {kit.storeLinks && kit.storeLinks.length > 0 && (
               <div className="rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                <h2 className="mb-4 text-xl font-bold text-white">Where to Buy</h2>
+                <h2 className="mb-4 text-center text-xl font-bold text-white">Where to Buy</h2>
                 <div className="space-y-2">
                   {kit.storeLinks.map((link) => (
                     <a
@@ -272,8 +276,8 @@ export default function KitDetailPage() {
 
         {/* Price History Chart */}
         {chartData.length > 0 && (
-          <div className="mt-12 rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-            <h2 className="mb-6 text-2xl font-bold text-white">Price History</h2>
+          <div className="mx-auto max-w-4xl mt-12 rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+            <h2 className="mb-6 text-center text-2xl font-bold text-white">Price History</h2>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
