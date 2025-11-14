@@ -15,20 +15,20 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 flex items-center justify-center">
+    <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-white mb-4">Something went wrong!</h1>
-        <p className="text-blue-200 mb-6">{error.message}</p>
+        <h1 className="mb-4 text-4xl font-bold text-white">Something went wrong</h1>
+        <p className="mb-6 text-white/60">{error.message}</p>
         <div className="flex gap-4 justify-center">
           <button
             onClick={reset}
-            className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 transition-colors"
+            className="rounded-lg bg-white px-6 py-3 text-sm font-medium text-black transition-all hover:bg-white/90"
           >
             Try again
           </button>
           <Link
             href="/"
-            className="rounded-xl border border-white/20 bg-white/10 px-6 py-3 font-semibold text-white hover:bg-white/20 transition-colors"
+            className="rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-white/10"
           >
             Go home
           </Link>
