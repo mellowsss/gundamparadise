@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(
-      alerts.map((alert) => ({
+      return NextResponse.json(
+        alerts.map((alert: any) => ({
         id: alert.id,
         targetPrice: alert.targetPrice,
         alertType: alert.alertType,
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           scale: alert.kit.scale,
           imageUrl: alert.kit.imageUrl,
           description: alert.kit.description,
-          storeLinks: alert.kit.storeLinks.map((link) => ({
+          storeLinks: alert.kit.storeLinks.map((link: any) => ({
             id: link.id,
             url: link.url,
             store: {

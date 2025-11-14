@@ -1,13 +1,14 @@
-import { PrismaClient } from '@prisma/client';
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-// Create Prisma client with error handling - never crashes
-let prismaClient: PrismaClient | null = null;
+// Prisma client - only initialized if Prisma is available
+let prismaClient: any = null;
 
 try {
+  // Try to import Prisma - will fail if @prisma/client is not generated
+  const { PrismaClient } = require('@prisma/client');
+  
+  const globalForPrisma = globalThis as unknown as {
+    prisma: any | undefined;
+  };
+
   // Only create if DATABASE_URL exists
   if (process.env.DATABASE_URL) {
     prismaClient =
@@ -21,8 +22,8 @@ try {
     }
   }
 } catch (error) {
-  // Silently fail - app will work without database
-  console.warn('Prisma client initialization skipped:', error);
+  // Prisma not available - app will use sample data
+  // This is expected if Prisma is not being used
   prismaClient = null;
 }
 

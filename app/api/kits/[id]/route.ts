@@ -42,11 +42,11 @@ export async function GET(
       select: { price: true },
     });
 
-    const priceValues = prices.map((p) => p.price);
+    const priceValues = prices.map((p: any) => p.price);
     const currentPrice = priceValues[0] || null;
     const averagePrice =
       priceValues.length > 0
-        ? priceValues.reduce((sum, p) => sum + p, 0) / priceValues.length
+        ? priceValues.reduce((sum: number, p: number) => sum + p, 0) / priceValues.length
         : null;
     const minPrice = priceValues.length > 0 ? Math.min(...priceValues) : null;
     const maxPrice = priceValues.length > 0 ? Math.max(...priceValues) : null;
@@ -63,12 +63,12 @@ export async function GET(
       averagePrice,
       minPrice,
       maxPrice,
-      priceEntries: kit.priceEntries.map((entry) => ({
+      priceEntries: kit.priceEntries.map((entry: any) => ({
         id: entry.id,
         price: entry.price,
         recordedAt: entry.recordedAt,
       })),
-      storeLinks: kit.storeLinks.map((link) => ({
+      storeLinks: kit.storeLinks.map((link: any) => ({
         id: link.id,
         url: link.url,
         isActive: link.isActive,

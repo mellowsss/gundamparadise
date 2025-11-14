@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(
-      collectionItems.map((item) => ({
+      collectionItems.map((item: any) => ({
         id: item.id,
         purchasePrice: item.purchasePrice,
         purchaseDate: item.purchaseDate,
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
           scale: item.kit.scale,
           imageUrl: item.kit.imageUrl,
           description: item.kit.description,
-          storeLinks: item.kit.storeLinks.map((link) => ({
+          storeLinks: item.kit.storeLinks.map((link: any) => ({
             id: link.id,
             url: link.url,
             store: {

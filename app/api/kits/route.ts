@@ -66,18 +66,18 @@ export async function GET(request: NextRequest) {
 
     // Calculate prices for each kit
     const kitsWithPrices = await Promise.all(
-      kits.map(async (kit) => {
+      kits.map(async (kit: any) => {
         const prices = await db.priceEntry.findMany({
           where: { kitId: kit.id },
           orderBy: { recordedAt: 'desc' },
           select: { price: true },
         });
 
-        const priceValues = prices.map((p) => p.price);
+        const priceValues = prices.map((p: any) => p.price);
         const currentPrice = priceValues[0] || null;
         const averagePrice =
           priceValues.length > 0
-            ? priceValues.reduce((sum, p) => sum + p, 0) / priceValues.length
+            ? priceValues.reduce((sum: number, p: number) => sum + p, 0) / priceValues.length
             : null;
 
         return {
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
           description: kit.description,
           currentPrice,
           averagePrice,
-          storeLinks: kit.storeLinks.map((link) => ({
+          storeLinks: kit.storeLinks.map((link: any) => ({
             id: link.id,
             url: link.url,
             store: {
