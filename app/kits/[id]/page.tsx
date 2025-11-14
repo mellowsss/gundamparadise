@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { Package, DollarSign, ExternalLink, Heart, Plus, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { Package, DollarSign, ExternalLink, Heart, Plus, ShoppingCart, ArrowLeft, Star } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Link from 'next/link';
 
@@ -40,14 +40,13 @@ export default function KitDetailPage() {
   const [kit, setKit] = useState<Kit | null>(null);
   const [priceHistory, setPriceHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [days, setDays] = useState(30);
 
   useEffect(() => {
     if (params.id) {
       fetchKit();
       fetchPriceHistory();
     }
-  }, [params.id, days]);
+  }, [params.id]);
 
   const fetchKit = async () => {
     try {
@@ -63,7 +62,7 @@ export default function KitDetailPage() {
 
   const fetchPriceHistory = async () => {
     try {
-      const response = await fetch(`/api/kits/${params.id}/prices?days=${days}`);
+      const response = await fetch(`/api/kits/${params.id}/prices?days=30`);
       const data = await response.json();
       setPriceHistory(data);
     } catch (error) {
@@ -105,19 +104,27 @@ export default function KitDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white/60">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 inline-block h-10 w-10 animate-spin rounded-full border-3 border-white/20 border-t-blue-500"></div>
+          <p className="text-sm font-medium text-white/60">Loading Gundam...</p>
+        </div>
       </div>
     );
   }
 
   if (!kit) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white/60 mb-4">Kit not found</p>
-          <Link href="/search" className="text-white hover:text-white/80 transition-colors">
-            ← Back to search
+          <Package className="mx-auto mb-4 h-16 w-16 text-white/20" />
+          <p className="mb-2 text-xl font-bold text-white">Gundam not found</p>
+          <Link
+            href="/search"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white hover:bg-blue-700 transition-all"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to search
           </Link>
         </div>
       </div>
@@ -130,8 +137,8 @@ export default function KitDetailPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 text-white">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <Link
           href="/search"
           className="mb-6 inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors"
@@ -142,7 +149,7 @@ export default function KitDetailPage() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Image */}
-          <div className="aspect-square w-full overflow-hidden rounded-lg border border-white/10 bg-black">
+          <div className="aspect-square w-full overflow-hidden rounded-2xl border-2 border-white/10 bg-gradient-to-br from-slate-900 to-black">
             {kit.imageUrl ? (
               <Image
                 src={kit.imageUrl}
@@ -151,10 +158,14 @@ export default function KitDetailPage() {
                 height={800}
                 className="h-full w-full object-cover"
                 unoptimized
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
               />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <Package className="h-32 w-32 text-white/10" />
+                <Package className="h-32 w-32 text-white/20" />
               </div>
             )}
           </div>
@@ -162,92 +173,81 @@ export default function KitDetailPage() {
           {/* Details */}
           <div className="space-y-6">
             {/* Badges */}
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-blue-500/20 px-3 py-1 text-xs font-medium text-blue-400">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-black text-white shadow-lg">
                 {kit.grade}
               </span>
               {kit.series && (
-                <span className="rounded bg-white/10 px-3 py-1 text-xs font-medium text-white/60">
+                <span className="rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm font-semibold text-white/70 backdrop-blur-sm">
                   {kit.series}
                 </span>
               )}
               {kit.scale && (
-                <span className="rounded bg-white/10 px-3 py-1 text-xs font-medium text-white/60">
+                <span className="rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm font-semibold text-white/70 backdrop-blur-sm">
                   {kit.scale}
                 </span>
               )}
             </div>
 
-            <h1 className="text-4xl font-bold text-white">{kit.name}</h1>
+            <h1 className="text-4xl font-black text-white sm:text-5xl">{kit.name}</h1>
 
             {kit.description && (
-              <p className="text-lg text-white/60 leading-relaxed">{kit.description}</p>
+              <p className="text-lg text-white/70 leading-relaxed">{kit.description}</p>
             )}
 
             {/* Price Info */}
-            <div className="rounded-lg border border-white/10 bg-white/5 p-6">
-              <h2 className="mb-4 text-sm font-medium text-white/60 uppercase tracking-wide">Price Information</h2>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <h2 className="mb-4 text-xl font-bold text-white">Pricing</h2>
+              <div className="space-y-3">
                 {kit.currentPrice && (
-                  <div>
-                    <div className="mb-1 text-xs text-white/40">Current</div>
-                    <div className="text-2xl font-bold text-green-400">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60">Current Price</span>
+                    <span className="text-3xl font-black text-green-400">
                       ${kit.currentPrice.toFixed(2)}
-                    </div>
+                    </span>
                   </div>
                 )}
                 {kit.averagePrice && (
-                  <div>
-                    <div className="mb-1 text-xs text-white/40">Average</div>
-                    <div className="text-2xl font-bold text-white">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60">Average Price</span>
+                    <span className="text-xl font-bold text-white/80">
                       ${kit.averagePrice.toFixed(2)}
-                    </div>
+                    </span>
                   </div>
                 )}
-                {kit.minPrice && (
-                  <div>
-                    <div className="mb-1 text-xs text-white/40">Lowest</div>
-                    <div className="text-lg font-semibold text-blue-400">
-                      ${kit.minPrice.toFixed(2)}
-                    </div>
-                  </div>
-                )}
-                {kit.maxPrice && (
-                  <div>
-                    <div className="mb-1 text-xs text-white/40">Highest</div>
-                    <div className="text-lg font-semibold text-red-400">
-                      ${kit.maxPrice.toFixed(2)}
-                    </div>
+                {kit.minPrice && kit.maxPrice && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/60">Price Range</span>
+                    <span className="text-white/80">
+                      ${kit.minPrice.toFixed(2)} - ${kit.maxPrice.toFixed(2)}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Action Buttons */}
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={addToWishlist}
-                className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-white/10"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-pink-500/50"
               >
-                <Heart className="h-4 w-4" />
+                <Heart className="h-5 w-5" />
                 Add to Wishlist
               </button>
               <button
                 onClick={addToCollection}
-                className="flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-medium text-black transition-all hover:bg-white/90"
+                className="flex items-center gap-2 rounded-xl border-2 border-white/20 bg-white/5 px-6 py-3 font-bold text-white backdrop-blur-sm transition-all hover:bg-white/10 hover:scale-105"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-5 w-5" />
                 Add to Collection
               </button>
             </div>
 
             {/* Store Links */}
             {kit.storeLinks && kit.storeLinks.length > 0 && (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-6">
-                <h2 className="mb-4 flex items-center gap-2 text-sm font-medium text-white/60 uppercase tracking-wide">
-                  <ShoppingCart className="h-4 w-4" />
-                  Where to Buy
-                </h2>
+              <div className="rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                <h2 className="mb-4 text-xl font-bold text-white">Where to Buy</h2>
                 <div className="space-y-2">
                   {kit.storeLinks.map((link) => (
                     <a
@@ -255,10 +255,13 @@ export default function KitDetailPage() {
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 p-4 transition-all hover:border-white/20 hover:bg-white/10"
+                      className="flex items-center justify-between rounded-lg bg-gradient-to-r from-blue-600/80 to-purple-600/80 px-4 py-3 font-bold text-white transition-all hover:scale-105 hover:from-blue-500 hover:to-purple-500"
                     >
-                      <span className="text-sm font-medium text-white">{link.store.name}</span>
-                      <ExternalLink className="h-4 w-4 text-white/40" />
+                      <span className="flex items-center gap-2">
+                        <ShoppingCart className="h-4 w-4" />
+                        {link.store.name}
+                      </span>
+                      <ExternalLink className="h-4 w-4" />
                     </a>
                   ))}
                 </div>
@@ -268,50 +271,33 @@ export default function KitDetailPage() {
         </div>
 
         {/* Price History Chart */}
-        <div className="mt-8 rounded-lg border border-white/10 bg-white/5 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-white/60 uppercase tracking-wide">Price History</h2>
-            <select
-              value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white focus:border-white/20 focus:outline-none transition-all"
-            >
-              <option value={7}>7 days</option>
-              <option value={30}>30 days</option>
-              <option value={90}>90 days</option>
-              <option value={180}>6 months</option>
-              <option value={365}>1 year</option>
-            </select>
-          </div>
-          {chartData.length > 0 ? (
+        {chartData.length > 0 && (
+          <div className="mt-12 rounded-xl border-2 border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+            <h2 className="mb-6 text-2xl font-bold text-white">Price History</h2>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="date" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#000', 
-                    border: '1px solid rgba(255,255,255,0.1)',
+                <XAxis dataKey="date" stroke="rgba(255,255,255,0.6)" />
+                <YAxis stroke="rgba(255,255,255,0.6)" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    border: '1px solid rgba(255,255,255,0.2)',
                     borderRadius: '8px',
-                    color: '#fff'
-                  }} 
+                    color: '#fff',
+                  }}
                 />
                 <Line
                   type="monotone"
                   dataKey="price"
-                  stroke="#3b82f6"
+                  stroke="#60a5fa"
                   strokeWidth={2}
-                  dot={{ r: 3, fill: '#3b82f6' }}
+                  dot={{ fill: '#60a5fa', r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center py-12 text-white/40">
-              No price history available
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

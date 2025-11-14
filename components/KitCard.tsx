@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Package, DollarSign, ShoppingCart, ExternalLink } from 'lucide-react';
+import { Package, DollarSign, ShoppingCart, ExternalLink, Star } from 'lucide-react';
 
 interface KitCardProps {
   kit: {
@@ -25,57 +25,62 @@ interface KitCardProps {
 
 export default function KitCard({ kit }: KitCardProps) {
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 transition-all hover:border-white/20 hover:bg-white/10 hover:shadow-xl hover:shadow-white/5">
+    <div className="group relative overflow-hidden rounded-2xl border-2 border-white/10 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl transition-all hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-[1.02]">
       <Link href={`/kits/${kit.id}`}>
-        {/* Image */}
+        {/* Image Container */}
         <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-slate-900 to-black">
           {kit.imageUrl ? (
-            <Image
-              src={kit.imageUrl}
-              alt={kit.name}
-              width={400}
-              height={400}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-              unoptimized
-              onError={(e) => {
-                // Fallback if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
+            <>
+              <Image
+                src={kit.imageUrl}
+                alt={kit.name}
+                width={500}
+                height={500}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                unoptimized
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+            </>
           ) : (
             <div className="flex h-full items-center justify-center">
-              <Package className="h-20 w-20 text-white/20" />
+              <Package className="h-24 w-24 text-white/20" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+          
+          {/* Grade Badge Overlay */}
+          <div className="absolute top-4 left-4 z-10">
+            <span className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-1.5 text-xs font-black text-white shadow-lg">
+              {kit.grade}
+            </span>
+          </div>
         </div>
       </Link>
       
       {/* Content */}
       <div className="p-5">
-        {/* Badges */}
-        <div className="mb-3 flex items-center gap-2">
-          <span className="rounded-full bg-gradient-to-r from-blue-500/30 to-blue-600/30 border border-blue-500/50 px-3 py-1 text-xs font-bold text-blue-300 backdrop-blur-sm">
-            {kit.grade}
-          </span>
-          {kit.series && (
-            <span className="rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-medium text-white/70 backdrop-blur-sm">
+        {/* Series Badge */}
+        {kit.series && (
+          <div className="mb-3">
+            <span className="rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold text-white/70 backdrop-blur-sm">
               {kit.series}
             </span>
-          )}
-        </div>
+          </div>
+        )}
         
         {/* Name */}
         <Link href={`/kits/${kit.id}`}>
-          <h3 className="mb-2 line-clamp-2 text-lg font-bold text-white transition-colors group-hover:text-blue-400">
+          <h3 className="mb-2 line-clamp-2 text-lg font-black text-white transition-colors group-hover:text-blue-400">
             {kit.name}
           </h3>
         </Link>
         
         {/* Scale */}
         {kit.scale && (
-          <p className="mb-3 text-xs font-medium text-white/50">Scale: {kit.scale}</p>
+          <p className="mb-4 text-xs font-semibold text-white/50">Scale: {kit.scale}</p>
         )}
         
         {/* Price */}
@@ -95,14 +100,14 @@ export default function KitCard({ kit }: KitCardProps) {
               </div>
             </div>
           ) : (
-            <span className="text-sm font-medium text-white/40">Price N/A</span>
+            <span className="text-sm font-semibold text-white/40">Price N/A</span>
           )}
         </div>
 
         {/* Store Links */}
         {kit.storeLinks && kit.storeLinks.length > 0 && (
           <div className="space-y-2 border-t border-white/10 pt-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-white/50">Buy Now</p>
+            <p className="text-xs font-black uppercase tracking-wider text-white/50">Buy Now</p>
             <div className="flex flex-wrap gap-2">
               {kit.storeLinks.slice(0, 2).map((link) => (
                 <a
@@ -111,7 +116,7 @@ export default function KitCard({ kit }: KitCardProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="group/link flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600/80 to-purple-600/80 px-3 py-2 text-xs font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-500/50"
+                  className="group/link flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600/90 to-purple-600/90 px-3 py-2 text-xs font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-500/50"
                 >
                   <ShoppingCart className="h-3.5 w-3.5" />
                   <span>{link.store.name}</span>

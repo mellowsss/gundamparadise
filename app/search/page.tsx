@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, X, Grid3x3, List } from 'lucide-react';
+import { Search, Filter, X, Grid3x3, List, Loader2 } from 'lucide-react';
 import KitCard from '@/components/KitCard';
 
 const GRADES = ['HG', 'RG', 'MG', 'PG', 'SD', 'EG', 'FM', 'RE/100'];
@@ -51,6 +51,7 @@ export default function SearchPage() {
       setKits(data.kits || []);
     } catch (error) {
       console.error('Error fetching kits:', error);
+      setKits([]);
     } finally {
       setLoading(false);
     }
@@ -65,7 +66,7 @@ export default function SearchPage() {
   const hasActiveFilters = search || selectedGrade || selectedSeries;
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 text-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-10 text-center">
@@ -114,8 +115,8 @@ export default function SearchPage() {
           )}
 
           {kits.length > 0 && !loading && (
-            <div className="ml-auto rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/80">
-              {kits.length} {kits.length === 1 ? 'kit' : 'kits'} found
+            <div className="ml-auto rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/80 backdrop-blur-sm">
+              {kits.length} {kits.length === 1 ? 'Gundam' : 'Gundams'} found
             </div>
           )}
         </div>
@@ -166,13 +167,14 @@ export default function SearchPage() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="mb-4 inline-block h-10 w-10 animate-spin rounded-full border-3 border-white/20 border-t-white"></div>
+              <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-blue-400" />
               <p className="text-sm font-medium text-white/60">Loading Gundams...</p>
             </div>
           </div>
         ) : kits.length === 0 ? (
           <div className="rounded-xl border-2 border-white/10 bg-white/5 p-20 text-center backdrop-blur-sm">
-            <p className="mb-2 text-xl font-bold text-white">No kits found</p>
+            <Search className="mx-auto mb-4 h-16 w-16 text-white/20" />
+            <p className="mb-2 text-xl font-bold text-white">No Gundams found</p>
             <p className="text-sm text-white/60">Try adjusting your search or filters</p>
           </div>
         ) : (
