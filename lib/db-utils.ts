@@ -3,7 +3,8 @@ import { SAMPLE_KITS } from './sample-data';
 
 // Helper to check if database is available
 export function checkDatabase() {
-  if (!process.env.DATABASE_URL) {
+  // Check if Prisma client exists and DATABASE_URL is set
+  if (!prisma || !process.env.DATABASE_URL) {
     return null;
   }
   return prisma;

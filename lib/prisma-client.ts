@@ -4,23 +4,26 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Create Prisma client with error handling
-let prismaClient: PrismaClient;
+// Create Prisma client with error handling - never crashes
+let prismaClient: PrismaClient | null = null;
 
 try {
-  prismaClient =
-    globalForPrisma.prisma ??
-    new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    });
+  // Only create if DATABASE_URL exists
+  if (process.env.DATABASE_URL) {
+    prismaClient =
+      globalForPrisma.prisma ??
+      new PrismaClient({
+        log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+      });
 
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.prisma = prismaClient;
+    if (process.env.NODE_ENV !== 'production') {
+      globalForPrisma.prisma = prismaClient;
+    }
   }
 } catch (error) {
-  console.warn('Prisma client initialization warning:', error);
-  // Create client anyway - errors will be handled at query time
-  prismaClient = new PrismaClient();
+  // Silently fail - app will work without database
+  console.warn('Prisma client initialization skipped:', error);
+  prismaClient = null;
 }
 
 export const prisma = prismaClient;
