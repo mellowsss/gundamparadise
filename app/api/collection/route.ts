@@ -1,60 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkEdgeDB } from '@/lib/edgedb-utils';
-import { transformObject } from '@/lib/transform';
+import { checkDatabase } from '@/lib/db-utils';
 
 const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export async function GET(request: NextRequest) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json([]);
     }
 
     // Get or create guest user
-    let user = await edgedb.querySingle(`
-      SELECT User FILTER .id = <uuid>$userId
-    `, { userId: GUEST_USER_ID });
+    let user = await db.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
     if (!user) {
-      user = await edgedb.querySingle(`
-        INSERT User {
-          id := <uuid>$userId
-        }
-      `, { userId: GUEST_USER_ID });
+      user = await db.user.create({
+        data: { id: GUEST_USER_ID },
+      });
     }
 
-    const collectionItems = await edgedb.query(`
-      SELECT CollectionItem {
-        id,
-        purchase_price,
-        purchase_date,
-        notes,
-        added_at,
+    const collectionItems = await db.collectionItem.findMany({
+      where: { userId: GUEST_USER_ID },
+      include: {
         kit: {
-          id,
-          name,
-          grade,
-          series,
-          scale,
-          image_url,
-          description,
-          store_links: {
-            id,
-            url,
-            store: {
-              id,
-              name,
-              website
-            }
-          }
-        }
-      }
-      FILTER .user.id = <uuid>$userId
-      ORDER BY .added_at DESC
-    `, { userId: GUEST_USER_ID });
+          include: {
+            storeLinks: {
+              include: { store: true },
+              where: { isActive: true },
+            },
+          },
+        },
+      },
+      orderBy: { addedAt: 'desc' },
+    });
 
-    return NextResponse.json(transformObject(collectionItems));
+    return NextResponse.json(
+      collectionItems.map((item) => ({
+        id: item.id,
+        purchasePrice: item.purchasePrice,
+        purchaseDate: item.purchaseDate,
+        notes: item.notes,
+        addedAt: item.addedAt,
+        kit: {
+          id: item.kit.id,
+          name: item.kit.name,
+          grade: item.kit.grade,
+          series: item.kit.series,
+          scale: item.kit.scale,
+          imageUrl: item.kit.imageUrl,
+          description: item.kit.description,
+          storeLinks: item.kit.storeLinks.map((link) => ({
+            id: link.id,
+            url: link.url,
+            store: {
+              id: link.store.id,
+              name: link.store.name,
+              website: link.store.website,
+            },
+          })),
+        },
+      }))
+    );
   } catch (error) {
     console.error('Error fetching collection:', error);
     return NextResponse.json(
@@ -66,8 +74,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
@@ -82,56 +90,45 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create guest user
-    let user = await edgedb.querySingle(`
-      SELECT User FILTER .id = <uuid>$userId
-    `, { userId: GUEST_USER_ID });
+    let user = await db.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
     if (!user) {
-      user = await edgedb.querySingle(`
-        INSERT User {
-          id := <uuid>$userId
-        }
-      `, { userId: GUEST_USER_ID });
+      user = await db.user.create({
+        data: { id: GUEST_USER_ID },
+      });
     }
 
     // Check if item already exists
-    const existing = await edgedb.querySingle(`
-      SELECT CollectionItem
-      FILTER .user.id = <uuid>$userId AND .kit.id = <uuid>$kitId
-    `, { userId: GUEST_USER_ID, kitId });
+    const existing = await db.collectionItem.findUnique({
+      where: {
+        userId_kitId: {
+          userId: GUEST_USER_ID,
+          kitId,
+        },
+      },
+    });
 
     let collectionItem;
     if (existing) {
-      const existingItem = existing as { id: string };
-      collectionItem = await edgedb.querySingle(`
-        UPDATE CollectionItem
-        FILTER .id = <uuid>$itemId
-        SET {
-          purchase_price := <optional float64>$purchasePrice,
-          purchase_date := <optional datetime>$purchaseDate,
-          notes := <optional str>$notes
-        }
-      `, {
-        itemId: existingItem.id,
-        purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
-        purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
-        notes: notes || null,
+      collectionItem = await db.collectionItem.update({
+        where: { id: existing.id },
+        data: {
+          purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
+          purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
+          notes: notes || null,
+        },
       });
     } else {
-      collectionItem = await edgedb.querySingle(`
-        INSERT CollectionItem {
-          user := (SELECT User FILTER .id = <uuid>$userId),
-          kit := (SELECT Kit FILTER .id = <uuid>$kitId),
-          purchase_price := <optional float64>$purchasePrice,
-          purchase_date := <optional datetime>$purchaseDate,
-          notes := <optional str>$notes
-        }
-      `, {
-        userId: GUEST_USER_ID,
-        kitId,
-        purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
-        purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
-        notes: notes || null,
+      collectionItem = await db.collectionItem.create({
+        data: {
+          userId: GUEST_USER_ID,
+          kitId,
+          purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
+          purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
+          notes: notes || null,
+        },
       });
     }
 

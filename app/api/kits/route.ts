@@ -1,49 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkEdgeDB } from '@/lib/edgedb-utils';
-import { transformObject } from '@/lib/transform';
-import { SAMPLE_KITS } from '@/lib/sample-data';
+import { checkDatabase, getSampleKits } from '@/lib/db-utils';
+
+const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export async function GET(request: NextRequest) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
-      // Return sample data when EdgeDB is not available
+    const db = checkDatabase();
+    
+    // Return sample data if database is not configured
+    if (!db) {
       const searchParams = request.nextUrl.searchParams;
       const search = searchParams.get('search') || '';
       const grade = searchParams.get('grade') || '';
       const series = searchParams.get('series') || '';
       
-      let filteredKits = SAMPLE_KITS;
-      
-      if (search) {
-        filteredKits = filteredKits.filter(kit => 
-          kit.name.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-      if (grade) {
-        filteredKits = filteredKits.filter(kit => kit.grade === grade);
-      }
-      if (series) {
-        filteredKits = filteredKits.filter(kit => kit.series === series);
-      }
+      const filteredKits = getSampleKits(search, grade, series);
       
       return NextResponse.json({
         kits: filteredKits,
         total: filteredKits.length,
-        limit: 20,
-        offset: 0,
-      });
-    }
-
-    // Try to test connection first
-    try {
-      await edgedb.query('SELECT 1');
-    } catch (connError) {
-      console.warn('EdgeDB connection test failed:', connError);
-      // Return empty result instead of crashing
-      return NextResponse.json({
-        kits: [],
-        total: 0,
         limit: 20,
         offset: 0,
       });
@@ -56,105 +31,106 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Build EdgeQL query
-    let query = `
-      SELECT Kit {
-        id,
-        name,
-        grade,
-        series,
-        scale,
-        image_url,
-        description,
-        price_entries: {
-          price,
-          recorded_at
-        } ORDER BY .recorded_at DESC LIMIT 1,
-        store_links: {
-          id,
-          url,
-          is_active,
-          store: {
-            id,
-            name,
-            website
-          }
-        }
-      }
-    `;
-
-    const filters: string[] = [];
+    // Build Prisma query
+    const where: any = {};
     if (search) {
-      filters.push(`.name ILIKE '%${search}%'`);
+      where.name = { contains: search, mode: 'insensitive' };
     }
     if (grade) {
-      filters.push(`.grade = '${grade}'`);
+      where.grade = grade;
     }
     if (series) {
-      filters.push(`.series = '${series}'`);
+      where.series = series;
     }
 
-    if (filters.length > 0) {
-      query += ` FILTER ${filters.join(' AND ')}`;
-    }
-
-    query += ` ORDER BY .name ASC LIMIT ${limit} OFFSET ${offset}`;
-
-    const kits = await edgedb.query(query);
-
-    // Get total count
-    let countQuery = `SELECT count(Kit)`;
-    if (filters.length > 0) {
-      countQuery += ` FILTER ${filters.join(' AND ')}`;
-    }
-    const total = await edgedb.querySingle(countQuery);
+    // Get kits with relations
+    const [kits, total] = await Promise.all([
+      db.kit.findMany({
+        where,
+        take: limit,
+        skip: offset,
+        orderBy: { name: 'asc' },
+        include: {
+          storeLinks: {
+            include: { store: true },
+            where: { isActive: true },
+          },
+          priceEntries: {
+            orderBy: { recordedAt: 'desc' },
+            take: 1,
+          },
+        },
+      }),
+      db.kit.count({ where }),
+    ]);
 
     // Calculate prices for each kit
     const kitsWithPrices = await Promise.all(
-      kits.map(async (kit: any) => {
-        const prices = await edgedb.query(`
-          SELECT PriceEntry {
-            price
-          }
-          FILTER .kit.id = <uuid>'${kit.id}'
-          ORDER BY .recorded_at DESC
-        `);
+      kits.map(async (kit) => {
+        const prices = await db.priceEntry.findMany({
+          where: { kitId: kit.id },
+          orderBy: { recordedAt: 'desc' },
+          select: { price: true },
+        });
 
-        const priceValues = prices.map((p: any) => p.price);
+        const priceValues = prices.map((p) => p.price);
         const currentPrice = priceValues[0] || null;
         const averagePrice =
           priceValues.length > 0
-            ? priceValues.reduce((sum: number, p: number) => sum + p, 0) / priceValues.length
+            ? priceValues.reduce((sum, p) => sum + p, 0) / priceValues.length
             : null;
 
         return {
-          ...kit,
+          id: kit.id,
+          name: kit.name,
+          grade: kit.grade,
+          series: kit.series,
+          scale: kit.scale,
+          imageUrl: kit.imageUrl,
+          description: kit.description,
           currentPrice,
           averagePrice,
-          priceCount: priceValues.length,
+          storeLinks: kit.storeLinks.map((link) => ({
+            id: link.id,
+            url: link.url,
+            store: {
+              id: link.store.id,
+              name: link.store.name,
+              website: link.store.website,
+            },
+          })),
         };
       })
     );
 
     return NextResponse.json({
-      kits: transformObject(kitsWithPrices),
-      total: Number(total),
+      kits: kitsWithPrices,
+      total,
       limit,
       offset,
     });
   } catch (error) {
     console.error('Error fetching kits:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch kits' },
-      { status: 500 }
-    );
+    // Fallback to sample data on error
+    const searchParams = request.nextUrl.searchParams;
+    const search = searchParams.get('search') || '';
+    const grade = searchParams.get('grade') || '';
+    const series = searchParams.get('series') || '';
+    const filteredKits = getSampleKits(search, grade, series);
+    
+    return NextResponse.json({
+      kits: filteredKits,
+      total: filteredKits.length,
+      limit: 20,
+      offset: 0,
+    });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
@@ -169,60 +145,42 @@ export async function POST(request: NextRequest) {
     }
 
     // Create kit
-    const kit = await edgedb.querySingle(`
-      INSERT Kit {
-        name := <str>$name,
-        grade := <str>$grade,
-        series := <optional str>$series,
-        scale := <optional str>$scale,
-        release_date := <optional datetime>$releaseDate,
-        image_url := <optional str>$imageUrl,
-        description := <optional str>$description
-      }
-    `, {
-      name,
-      grade,
-      series: series || null,
-      scale: scale || null,
-      releaseDate: releaseDate ? new Date(releaseDate) : null,
-      imageUrl: imageUrl || null,
-      description: description || null,
+    const kit = await db.kit.create({
+      data: {
+        name,
+        grade,
+        series: series || null,
+        scale: scale || null,
+        releaseDate: releaseDate ? new Date(releaseDate) : null,
+        imageUrl: imageUrl || null,
+        description: description || null,
+      },
     });
 
     // Create store links if provided
     if (storeLinks && Array.isArray(storeLinks)) {
-      const kitResult = kit as { id: string };
       for (const link of storeLinks) {
         // Find or create store
-        let store = await edgedb.querySingle(`
-          SELECT Store FILTER .name = <str>$name
-        `, { name: link.storeName });
+        let store = await db.store.findUnique({
+          where: { name: link.storeName },
+        });
 
         if (!store) {
-          store = await edgedb.querySingle(`
-            INSERT Store {
-              name := <str>$name,
-              website := <str>$website
-            }
-          `, {
-            name: link.storeName,
-            website: link.storeWebsite || link.storeName,
+          store = await db.store.create({
+            data: {
+              name: link.storeName,
+              website: link.storeWebsite || link.storeName,
+            },
           });
         }
 
-        const storeResult = store as { id: string };
-
         // Create store link
-        await edgedb.query(`
-          INSERT StoreLink {
-            kit := (SELECT Kit FILTER .id = <uuid>$kitId),
-            store := (SELECT Store FILTER .id = <uuid>$storeId),
-            url := <str>$url
-          }
-        `, {
-          kitId: kitResult.id,
-          storeId: storeResult.id,
-          url: link.url,
+        await db.storeLink.create({
+          data: {
+            kitId: kit.id,
+            storeId: store.id,
+            url: link.url,
+          },
         });
       }
     }

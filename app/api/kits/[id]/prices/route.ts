@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkEdgeDB } from '@/lib/edgedb-utils';
-import { transformObject } from '@/lib/transform';
+import { checkDatabase } from '@/lib/db-utils';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json([]);
     }
 
@@ -19,23 +18,22 @@ export async function GET(
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const priceEntries = await edgedb.query(`
-      SELECT PriceEntry {
-        id,
-        price,
-        currency,
-        in_stock,
-        recorded_at
-      }
-      FILTER .kit.id = <uuid>$kitId
-        AND .recorded_at >= <datetime>$startDate
-      ORDER BY .recorded_at ASC
-    `, {
-      kitId: id,
-      startDate: startDate.toISOString(),
+    const priceEntries = await db.priceEntry.findMany({
+      where: {
+        kitId: id,
+        recordedAt: { gte: startDate },
+      },
+      orderBy: { recordedAt: 'asc' },
+      select: {
+        id: true,
+        price: true,
+        currency: true,
+        inStock: true,
+        recordedAt: true,
+      },
     });
 
-    return NextResponse.json(transformObject(priceEntries));
+    return NextResponse.json(priceEntries);
   } catch (error) {
     console.error('Error fetching price history:', error);
     return NextResponse.json(
@@ -50,6 +48,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const db = checkDatabase();
+    if (!db) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    }
+
     const resolvedParams = await params;
     const { id } = resolvedParams;
     const body = await request.json();
@@ -62,26 +65,14 @@ export async function POST(
       );
     }
 
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
-    }
-
-    const priceEntry = await edgedb.querySingle(`
-      INSERT PriceEntry {
-        kit := (SELECT Kit FILTER .id = <uuid>$kitId),
-        store := (SELECT Store FILTER .id = <uuid>$storeId) IF <bool>$hasStore ELSE <Store>{},
-        price := <float64>$price,
-        currency := <str>$currency,
-        in_stock := <bool>$inStock
-      }
-    `, {
-      kitId: id,
-      storeId: storeId || null,
-      hasStore: !!storeId,
-      price: parseFloat(price),
-      currency,
-      inStock,
+    const priceEntry = await db.priceEntry.create({
+      data: {
+        kitId: id,
+        storeId: storeId || null,
+        price: parseFloat(price),
+        currency,
+        inStock,
+      },
     });
 
     return NextResponse.json(priceEntry, { status: 201 });

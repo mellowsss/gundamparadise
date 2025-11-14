@@ -1,61 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkEdgeDB } from '@/lib/edgedb-utils';
-import { transformObject } from '@/lib/transform';
+import { checkDatabase } from '@/lib/db-utils';
 
 const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export async function GET(request: NextRequest) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json([]);
     }
 
     // Get or create guest user
-    let user = await edgedb.querySingle(`
-      SELECT User FILTER .id = <uuid>$userId
-    `, { userId: GUEST_USER_ID });
+    let user = await db.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
     if (!user) {
-      user = await edgedb.querySingle(`
-        INSERT User {
-          id := <uuid>$userId
-        }
-      `, { userId: GUEST_USER_ID });
+      user = await db.user.create({
+        data: { id: GUEST_USER_ID },
+      });
     }
 
-    const alerts = await edgedb.query(`
-      SELECT PriceAlert {
-        id,
-        target_price,
-        alert_type,
-        is_active,
-        created_at,
-        triggered_at,
+    const alerts = await db.priceAlert.findMany({
+      where: { userId: GUEST_USER_ID },
+      include: {
         kit: {
-          id,
-          name,
-          grade,
-          series,
-          scale,
-          image_url,
-          description,
-          store_links: {
-            id,
-            url,
-            store: {
-              id,
-              name,
-              website
-            }
-          }
-        }
-      }
-      FILTER .user.id = <uuid>$userId
-      ORDER BY .created_at DESC
-    `, { userId: GUEST_USER_ID });
+          include: {
+            storeLinks: {
+              include: { store: true },
+              where: { isActive: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return NextResponse.json(transformObject(alerts));
+    return NextResponse.json(
+      alerts.map((alert) => ({
+        id: alert.id,
+        targetPrice: alert.targetPrice,
+        alertType: alert.alertType,
+        isActive: alert.isActive,
+        createdAt: alert.createdAt,
+        triggeredAt: alert.triggeredAt,
+        kit: {
+          id: alert.kit.id,
+          name: alert.kit.name,
+          grade: alert.kit.grade,
+          series: alert.kit.series,
+          scale: alert.kit.scale,
+          imageUrl: alert.kit.imageUrl,
+          description: alert.kit.description,
+          storeLinks: alert.kit.storeLinks.map((link) => ({
+            id: link.id,
+            url: link.url,
+            store: {
+              id: link.store.id,
+              name: link.store.name,
+              website: link.store.website,
+            },
+          })),
+        },
+      }))
+    );
   } catch (error) {
     console.error('Error fetching alerts:', error);
     return NextResponse.json(
@@ -67,8 +75,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
@@ -83,30 +91,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create guest user
-    let user = await edgedb.querySingle(`
-      SELECT User FILTER .id = <uuid>$userId
-    `, { userId: GUEST_USER_ID });
+    let user = await db.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
     if (!user) {
-      user = await edgedb.querySingle(`
-        INSERT User {
-          id := <uuid>$userId
-        }
-      `, { userId: GUEST_USER_ID });
+      user = await db.user.create({
+        data: { id: GUEST_USER_ID },
+      });
     }
 
-    const alert = await edgedb.querySingle(`
-      INSERT PriceAlert {
-        user := (SELECT User FILTER .id = <uuid>$userId),
-        kit := (SELECT Kit FILTER .id = <uuid>$kitId),
-        target_price := <optional float64>$targetPrice,
-        alert_type := <str>$alertType
-      }
-    `, {
-      userId: GUEST_USER_ID,
-      kitId,
-      targetPrice: targetPrice ? parseFloat(targetPrice) : null,
-      alertType,
+    const alert = await db.priceAlert.create({
+      data: {
+        userId: GUEST_USER_ID,
+        kitId,
+        targetPrice: targetPrice ? parseFloat(targetPrice) : null,
+        alertType,
+      },
     });
 
     return NextResponse.json(alert, { status: 201 });

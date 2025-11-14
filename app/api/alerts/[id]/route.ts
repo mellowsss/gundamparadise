@@ -1,26 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkEdgeDB } from '@/lib/edgedb-utils';
-
-const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
+import { checkDatabase } from '@/lib/db-utils';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
     const resolvedParams = await params;
     const { id } = resolvedParams;
 
-    await edgedb.query(`
-      DELETE PriceAlert
-      FILTER .id = <uuid>$alertId
-    `, {
-      alertId: id,
+    await db.priceAlert.delete({
+      where: { id },
     });
 
     return NextResponse.json({ success: true });
@@ -38,25 +33,21 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const db = checkDatabase();
+    if (!db) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    }
+
     const resolvedParams = await params;
     const { id } = resolvedParams;
     const body = await request.json();
     const { isActive } = body;
 
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
-    }
-
-    const alert = await edgedb.querySingle(`
-      UPDATE PriceAlert
-      FILTER .id = <uuid>$alertId
-      SET {
-        is_active := <bool>$isActive
-      }
-    `, {
-      alertId: id,
-      isActive: isActive !== undefined ? isActive : true,
+    const alert = await db.priceAlert.update({
+      where: { id },
+      data: {
+        isActive: isActive !== undefined ? isActive : true,
+      },
     });
 
     if (!alert) {

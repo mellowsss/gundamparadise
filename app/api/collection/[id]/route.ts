@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkEdgeDB } from '@/lib/edgedb-utils';
+import { checkDatabase } from '@/lib/db-utils';
 
 const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -8,20 +8,19 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
     const resolvedParams = await params;
     const { id } = resolvedParams;
 
-    await edgedb.query(`
-      DELETE CollectionItem
-      FILTER .user.id = <uuid>$userId AND .kit.id = <uuid>$kitId
-    `, {
-      userId: GUEST_USER_ID,
-      kitId: id,
+    await db.collectionItem.deleteMany({
+      where: {
+        userId: GUEST_USER_ID,
+        kitId: id,
+      },
     });
 
     return NextResponse.json({ success: true });

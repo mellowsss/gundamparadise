@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkEdgeDB } from '@/lib/edgedb-utils';
-import { transformObject } from '@/lib/transform';
+import { checkDatabase } from '@/lib/db-utils';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
@@ -19,62 +18,67 @@ export async function GET(
       return NextResponse.json({ error: 'Kit ID is required' }, { status: 400 });
     }
 
-    const kit = await edgedb.querySingle(`
-      SELECT Kit {
-        id,
-        name,
-        grade,
-        series,
-        scale,
-        image_url,
-        description,
-        price_entries: {
-          id,
-          price,
-          recorded_at
-        } ORDER BY .recorded_at DESC LIMIT 10,
-        store_links: {
-          id,
-          url,
-          is_active,
-          store: {
-            id,
-            name,
-            website
-          }
-        }
-      }
-      FILTER .id = <uuid>$id
-    `, { id });
+    const kit = await db.kit.findUnique({
+      where: { id },
+      include: {
+        priceEntries: {
+          orderBy: { recordedAt: 'desc' },
+          take: 10,
+        },
+        storeLinks: {
+          include: { store: true },
+          where: { isActive: true },
+        },
+      },
+    });
 
     if (!kit) {
       return NextResponse.json({ error: 'Kit not found' }, { status: 404 });
     }
 
     // Calculate price statistics
-    const prices = await edgedb.query(`
-      SELECT PriceEntry {
-        price
-      }
-      FILTER .kit.id = <uuid>$kitId
-    `, { kitId: id });
+    const prices = await db.priceEntry.findMany({
+      where: { kitId: id },
+      select: { price: true },
+    });
 
-    const priceValues = prices.map((p: any) => p.price);
+    const priceValues = prices.map((p) => p.price);
     const currentPrice = priceValues[0] || null;
     const averagePrice =
       priceValues.length > 0
-        ? priceValues.reduce((sum: number, p: number) => sum + p, 0) / priceValues.length
+        ? priceValues.reduce((sum, p) => sum + p, 0) / priceValues.length
         : null;
     const minPrice = priceValues.length > 0 ? Math.min(...priceValues) : null;
     const maxPrice = priceValues.length > 0 ? Math.max(...priceValues) : null;
 
-    return NextResponse.json(transformObject({
-      ...kit,
+    return NextResponse.json({
+      id: kit.id,
+      name: kit.name,
+      grade: kit.grade,
+      series: kit.series,
+      scale: kit.scale,
+      imageUrl: kit.imageUrl,
+      description: kit.description,
       currentPrice,
       averagePrice,
       minPrice,
       maxPrice,
-    }));
+      priceEntries: kit.priceEntries.map((entry) => ({
+        id: entry.id,
+        price: entry.price,
+        recordedAt: entry.recordedAt,
+      })),
+      storeLinks: kit.storeLinks.map((link) => ({
+        id: link.id,
+        url: link.url,
+        isActive: link.isActive,
+        store: {
+          id: link.store.id,
+          name: link.store.name,
+          website: link.store.website,
+        },
+      })),
+    });
   } catch (error) {
     console.error('Error fetching kit:', error);
     return NextResponse.json(

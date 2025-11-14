@@ -1,88 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkEdgeDB } from '@/lib/edgedb-utils';
-import { transformObject } from '@/lib/transform';
+import { checkDatabase } from '@/lib/db-utils';
 
 const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export async function GET(request: NextRequest) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json([]);
     }
 
     // Get or create guest user
-    let user = await edgedb.querySingle(`
-      SELECT User FILTER .id = <uuid>$userId
-    `, { userId: GUEST_USER_ID });
+    let user = await db.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
     if (!user) {
-      user = await edgedb.querySingle(`
-        INSERT User {
-          id := <uuid>$userId
-        }
-      `, { userId: GUEST_USER_ID });
+      user = await db.user.create({
+        data: { id: GUEST_USER_ID },
+      });
     }
 
-    const wishlistItems = await edgedb.query(`
-      SELECT WishlistItem {
-        id,
-        target_price,
-        notes,
-        added_at,
+    const wishlistItems = await db.wishlistItem.findMany({
+      where: { userId: GUEST_USER_ID },
+      include: {
         kit: {
-          id,
-          name,
-          grade,
-          series,
-          scale,
-          image_url,
-          description,
-          store_links: {
-            id,
-            url,
-            store: {
-              id,
-              name,
-              website
-            }
-          }
-        }
-      }
-      FILTER .user.id = <uuid>$userId
-      ORDER BY .added_at DESC
-    `, { userId: GUEST_USER_ID });
+          include: {
+            storeLinks: {
+              include: { store: true },
+              where: { isActive: true },
+            },
+          },
+        },
+      },
+      orderBy: { addedAt: 'desc' },
+    });
 
     // Calculate current prices
     const itemsWithPrices = await Promise.all(
-      wishlistItems.map(async (item: any) => {
-        const prices = await edgedb.query(`
-          SELECT PriceEntry {
-            price
-          }
-          FILTER .kit.id = <uuid>$kitId
-          ORDER BY .recorded_at DESC
-        `, { kitId: item.kit.id });
+      wishlistItems.map(async (item) => {
+        const prices = await db.priceEntry.findMany({
+          where: { kitId: item.kitId },
+          orderBy: { recordedAt: 'desc' },
+          select: { price: true },
+        });
 
-        const priceValues = prices.map((p: any) => p.price);
+        const priceValues = prices.map((p) => p.price);
         const currentPrice = priceValues[0] || null;
         const averagePrice =
           priceValues.length > 0
-            ? priceValues.reduce((sum: number, p: number) => sum + p, 0) / priceValues.length
+            ? priceValues.reduce((sum, p) => sum + p, 0) / priceValues.length
             : null;
 
         return {
-          ...item,
+          id: item.id,
+          targetPrice: item.targetPrice,
+          notes: item.notes,
+          addedAt: item.addedAt,
           kit: {
-            ...item.kit,
+            id: item.kit.id,
+            name: item.kit.name,
+            grade: item.kit.grade,
+            series: item.kit.series,
+            scale: item.kit.scale,
+            imageUrl: item.kit.imageUrl,
+            description: item.kit.description,
             currentPrice,
             averagePrice,
+            storeLinks: item.kit.storeLinks.map((link) => ({
+              id: link.id,
+              url: link.url,
+              store: {
+                id: link.store.id,
+                name: link.store.name,
+                website: link.store.website,
+              },
+            })),
           },
         };
       })
     );
 
-    return NextResponse.json(transformObject(itemsWithPrices));
+    return NextResponse.json(itemsWithPrices);
   } catch (error) {
     console.error('Error fetching wishlist:', error);
     return NextResponse.json(
@@ -94,8 +93,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const edgedb = checkEdgeDB();
-    if (!edgedb) {
+    const db = checkDatabase();
+    if (!db) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
@@ -110,52 +109,43 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create guest user
-    let user = await edgedb.querySingle(`
-      SELECT User FILTER .id = <uuid>$userId
-    `, { userId: GUEST_USER_ID });
+    let user = await db.user.findUnique({
+      where: { id: GUEST_USER_ID },
+    });
 
     if (!user) {
-      user = await edgedb.querySingle(`
-        INSERT User {
-          id := <uuid>$userId
-        }
-      `, { userId: GUEST_USER_ID });
+      user = await db.user.create({
+        data: { id: GUEST_USER_ID },
+      });
     }
 
     // Check if item already exists
-    const existing = await edgedb.querySingle(`
-      SELECT WishlistItem
-      FILTER .user.id = <uuid>$userId AND .kit.id = <uuid>$kitId
-    `, { userId: GUEST_USER_ID, kitId });
+    const existing = await db.wishlistItem.findUnique({
+      where: {
+        userId_kitId: {
+          userId: GUEST_USER_ID,
+          kitId,
+        },
+      },
+    });
 
     let wishlistItem;
     if (existing) {
-      const existingItem = existing as { id: string };
-      wishlistItem = await edgedb.querySingle(`
-        UPDATE WishlistItem
-        FILTER .id = <uuid>$itemId
-        SET {
-          target_price := <optional float64>$targetPrice,
-          notes := <optional str>$notes
-        }
-      `, {
-        itemId: existingItem.id,
-        targetPrice: targetPrice ? parseFloat(targetPrice) : null,
-        notes: notes || null,
+      wishlistItem = await db.wishlistItem.update({
+        where: { id: existing.id },
+        data: {
+          targetPrice: targetPrice ? parseFloat(targetPrice) : null,
+          notes: notes || null,
+        },
       });
     } else {
-      wishlistItem = await edgedb.querySingle(`
-        INSERT WishlistItem {
-          user := (SELECT User FILTER .id = <uuid>$userId),
-          kit := (SELECT Kit FILTER .id = <uuid>$kitId),
-          target_price := <optional float64>$targetPrice,
-          notes := <optional str>$notes
-        }
-      `, {
-        userId: GUEST_USER_ID,
-        kitId,
-        targetPrice: targetPrice ? parseFloat(targetPrice) : null,
-        notes: notes || null,
+      wishlistItem = await db.wishlistItem.create({
+        data: {
+          userId: GUEST_USER_ID,
+          kitId,
+          targetPrice: targetPrice ? parseFloat(targetPrice) : null,
+          notes: notes || null,
+        },
       });
     }
 
