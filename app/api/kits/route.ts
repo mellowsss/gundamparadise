@@ -1,14 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkEdgeDB } from '@/lib/edgedb-utils';
 import { transformObject } from '@/lib/transform';
+import { SAMPLE_KITS } from '@/lib/sample-data';
 
 export async function GET(request: NextRequest) {
   try {
     const edgedb = checkEdgeDB();
     if (!edgedb) {
+      // Return sample data when EdgeDB is not available
+      const searchParams = request.nextUrl.searchParams;
+      const search = searchParams.get('search') || '';
+      const grade = searchParams.get('grade') || '';
+      const series = searchParams.get('series') || '';
+      
+      let filteredKits = SAMPLE_KITS;
+      
+      if (search) {
+        filteredKits = filteredKits.filter(kit => 
+          kit.name.toLowerCase().includes(search.toLowerCase())
+        );
+      }
+      if (grade) {
+        filteredKits = filteredKits.filter(kit => kit.grade === grade);
+      }
+      if (series) {
+        filteredKits = filteredKits.filter(kit => kit.series === series);
+      }
+      
       return NextResponse.json({
-        kits: [],
-        total: 0,
+        kits: filteredKits,
+        total: filteredKits.length,
         limit: 20,
         offset: 0,
       });
